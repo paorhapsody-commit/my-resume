@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ผลงาน & ความสำเร็จ — สมยศ ดีวิจิตร</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<script src="theme.js"></script>
+<script>
+  (async function () {
+    try {
+      if (!window.SUPABASE_URL || !window.supabase || !window.DCLTheme) return;
+      const sb = (window.__sb || (window.__sb = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY, { auth: { persistSession: false, autoRefreshToken: false } })));
+      const { data } = await sb.from('site_settings').select('key,value').in('key', ['theme', 'profile']);
+      const map = {};
+      (data || []).forEach(r => map[r.key] = (typeof r.value === 'string' ? JSON.parse(r.value) : r.value));
+      if (map.theme) DCLTheme.applyTheme(map.theme);
+      // หน้า loading: รูปโปร + ชื่อ (เหมือนหน้า resume)
+      const p = map.profile || {};
+      const apply = () => {
+        if (p.photo_url) { const im = document.getElementById('ld-photo'); if (im) { im.src = p.photo_url; im.style.display = ''; const fb = document.getElementById('ld-photo-fb'); if (fb) fb.style.display = 'none'; } }
+        const nm = document.getElementById('ld-name'); if (nm && p.name_script) nm.textContent = p.name_script;
+      };
+      if (document.readyState !== 'loading') apply(); else document.addEventListener('DOMContentLoaded', apply);
+    } catch (e) { /* ใช้สีเริ่มต้น */ }
+  })();
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&family=Great+Vibes&display=swap" rel="stylesheet" />
+
+<script>
+  tailwind.config = { theme: { extend: {
+    fontFamily: { sans: ['Sarabun','sans-serif'], script: ['"Great Vibes"','cursive'] },
+    colors: {
+      navy: {
+        50:'rgb(var(--navy-50) / <alpha-value>)', 100:'rgb(var(--navy-100) / <alpha-value>)', 200:'rgb(var(--navy-200) / <alpha-value>)',
+        300:'rgb(var(--navy-300) / <alpha-value>)', 400:'rgb(var(--navy-400) / <alpha-value>)', 500:'rgb(var(--navy-500) / <alpha-value>)',
+        600:'rgb(var(--navy-600) / <alpha-value>)', 700:'rgb(var(--navy-700) / <alpha-value>)', 800:'rgb(var(--navy-800) / <alpha-value>)',
+        900:'rgb(var(--navy-900) / <alpha-value>)', 950:'rgb(var(--navy-950) / <alpha-value>)',
+      },
+      gold: { 400:'rgb(var(--gold-400) / <alpha-value>)', 500:'rgb(var(--gold-500) / <alpha-value>)', 600:'rgb(var(--gold-600) / <alpha-value>)' },
+    },
+  }}};
+</script>
+<style>
+  /* ค่าเริ่มต้นของธีม (สีเดิม) — ถูก override ได้จาก Supabase ผ่าน theme.js */
+  :root {
+    --navy-50:238 241 251; --navy-100:214 221 245; --navy-200:174 187 233;
+    --navy-300:125 144 215; --navy-400:79 102 194; --navy-500:49 71 168;
+    --navy-600:36 58 140; --navy-700:29 47 115; --navy-800:23 37 86;
+    --navy-900:17 27 63; --navy-950:11 18 48;
+    --gold-400:244 193 75; --gold-500:234 169 22; --gold-600:201 138 14;
+  }
+  body { font-family:'Sarabun',sans-serif; }
+  .lucide { width:1em; height:1em; }
+  .reveal { opacity:0; transform:translateY(12px); animation:rise .5s ease forwards; }
+  @keyframes rise { to { opacity:1; transform:none; } }
+  .noscroll { overflow:hidden; }
+
+  /* ===== Loading / page-transition overlay ===== */
+  #pageLoader { position:fixed; inset:0; z-index:60; display:grid; place-items:center;
+    background:radial-gradient(120% 120% at 50% 0%, rgb(var(--navy-600)) 0%, rgb(var(--navy-800)) 45%, rgb(var(--navy-950)) 100%); }
+  #pageLoader .loader-inner { display:flex; flex-direction:column; align-items:center; gap:16px; animation:loaderIn .5s ease both; }
+  #pageLoader .ring-wrap { position:relative; width:96px; height:96px; }
+  #pageLoader .spin-ring { position:absolute; inset:0; border-radius:9999px;
+    background:conic-gradient(from 0deg, rgb(var(--gold-400)), rgb(var(--gold-500)) 30%, rgb(var(--gold-400) / 0) 62%);
+    -webkit-mask:radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 4px));
+            mask:radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 4px));
+    animation:loaderSpin 1s linear infinite; }
+  #pageLoader .ring-wrap i { position:absolute; inset:0; display:grid; place-items:center; color:rgb(var(--gold-400)); font-size:1.8rem; }
+  #pageLoader .avatar { position:absolute; inset:9px; border-radius:9999px; overflow:hidden; background:rgb(var(--navy-700)); display:grid; place-items:center; color:#fff; font-weight:800; font-size:1.5rem; }
+  #pageLoader .avatar img { width:100%; height:100%; object-fit:cover; }
+  #pageLoader .loader-name { font-family:'Great Vibes',cursive; color:rgb(var(--gold-400)); font-size:1.9rem; line-height:1; }
+  #pageLoader .loader-sub { color:rgb(var(--navy-200)); font-size:.82rem; letter-spacing:.06em; }
+  #pageLoader .loader-sub::after { content:''; animation:loaderDots 1.4s steps(1,end) infinite; }
+  @keyframes loaderSpin { to { transform:rotate(360deg); } }
+  @keyframes loaderIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+  @keyframes loaderDots { 0%{content:'';} 25%{content:'.';} 50%{content:'..';} 75%{content:'...';} }
+  html.loaded #pageLoader { opacity:0; visibility:hidden; transition:opacity .5s ease, visibility .5s; }
+</style>
+</head>
+
+<body class="bg-slate-200 text-slate-800 antialiased">
+
+  <!-- ===== Loading / page-transition overlay ===== -->
+  <div id="pageLoader" aria-hidden="true">
+    <div class="loader-inner">
+      <div class="ring-wrap"><div class="spin-ring"></div>
+        <div class="avatar">
+          <img id="ld-photo" alt="" style="display:none" onerror="this.style.display='none'; var fb=document.getElementById('ld-photo-fb'); if(fb) fb.style.display='';" />
+          <span id="ld-photo-fb">CV</span>
+        </div>
+      </div>
+      <p class="loader-name" id="ld-name">Your Name</p>
+      <p class="loader-sub">กำลังโหลด</p>
+    </div>
+  </div>
+
+  <!-- Top bar -->
+  <div class="sticky top-0 z-30 bg-white/85 backdrop-blur border-b border-slate-200">
+    <div class="max-w-6xl mx-auto px-5 py-3 flex items-center justify-between">
+      <a href="../index.html" class="flex items-center gap-2 text-navy-700 font-semibold hover:text-navy-900">
+        <i data-lucide="arrow-left"></i><span>กลับหน้า Resume</span>
+      </a>
+      <div class="flex items-center gap-2 text-navy-700 font-bold">
+        <i data-lucide="folder-kanban" class="text-gold-500"></i><span>ผลงาน &amp; ความสำเร็จ</span>
+      </div>
+    </div>
+  </div>
+
+  <main class="max-w-6xl mx-auto px-5 py-8">
+
+    <header class="reveal rounded-2xl bg-navy-900 text-white p-8 mb-6 relative overflow-hidden">
+      <div class="absolute top-0 right-0 h-full w-1/2 bg-navy-800/60 -skew-x-12 translate-x-24"></div>
+      <div class="relative">
+        <p class="font-script text-3xl text-gold-400 leading-none">Portfolio</p>
+        <h1 class="text-3xl md:text-4xl font-extrabold mt-1">ผลงาน • ใบประกาศ • รางวัล</h1>
+        <p class="text-navy-200 mt-2">ระบบที่พัฒนา ใบประกาศนียบัตร รางวัล และการเป็นวิทยากร</p>
+      </div>
+    </header>
+
+    <!-- tabs -->
+    <div id="tabs" class="flex flex-wrap gap-2 mb-6"></div>
+
+    <!-- grid -->
+    <div id="grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <p id="loading" class="col-span-full text-center text-slate-400 py-10">กำลังโหลด…</p>
+    </div>
+
+    <!-- pagination -->
+    <div id="pager" class="flex flex-wrap justify-center items-center gap-2 mt-7"></div>
+  </main>
+
+  <!-- ===== PROJECT DETAIL MODAL ===== -->
+  <div id="projModal" class="fixed inset-0 z-40 bg-black/50 hidden items-center justify-center p-4 overflow-y-auto" onclick="if(event.target===this)closeProj()">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl my-auto">
+      <div class="flex items-start justify-between gap-3 px-6 py-4 border-b border-slate-100">
+        <div>
+          <h3 id="pmTitle" class="font-extrabold text-navy-800 text-lg"></h3>
+          <p id="pmCat" class="text-xs text-navy-600"></p>
+        </div>
+        <button onclick="closeProj()" class="text-slate-400 hover:text-slate-700 shrink-0"><i data-lucide="x"></i></button>
+      </div>
+      <div class="p-6 space-y-4">
+        <p id="pmDesc" class="text-sm text-slate-600 leading-relaxed"></p>
+        <div id="pmTech" class="flex flex-wrap gap-1.5"></div>
+        <div id="pmImages" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
+        <p id="pmNoImg" class="hidden text-xs text-slate-400 text-center py-4 bg-slate-50 rounded-lg">
+          <i data-lucide="image-off"></i> ระบบนี้ต้องเข้าสู่ระบบจึงเข้าดูได้ — ยังไม่มีภาพประกอบ
+        </p>
+        <a id="pmLink" href="#" target="_blank" rel="noopener"
+           class="hidden w-full justify-center inline-flex items-center gap-2 rounded-lg bg-navy-700 hover:bg-navy-800 text-white text-sm font-medium px-4 py-2.5 transition">
+          <i data-lucide="external-link"></i> เปิดดูระบบ
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== LIGHTBOX ===== -->
+  <div id="lightbox" class="fixed inset-0 z-50 bg-black/85 hidden items-center justify-center p-4" onclick="closeLightbox(event)">
+    <button class="absolute top-4 right-4 text-white/80 hover:text-white text-3xl"><i data-lucide="x"></i></button>
+    <button id="lbPrev" class="absolute left-4 text-white/70 hover:text-white text-4xl"><i data-lucide="chevron-left"></i></button>
+    <button id="lbNext" class="absolute right-4 text-white/70 hover:text-white text-4xl"><i data-lucide="chevron-right"></i></button>
+    <figure class="max-w-5xl max-h-[90vh] flex flex-col items-center">
+      <img id="lbImg" class="max-h-[82vh] max-w-full rounded-lg shadow-2xl object-contain" />
+      <figcaption id="lbCap" class="text-white/90 text-center mt-3 text-sm"></figcaption>
+    </figure>
+  </div>
+
+  <script src="config.js"></script>
+  <script>
+    const sb = (window.__sb || (window.__sb = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY, { auth: { persistSession: false, autoRefreshToken: false } })));
+
+    const TABS = {
+      projects:    { label:'ผลงาน',          icon:'folder-kanban' },
+      certificate: { label:'ใบประกาศ',        icon:'award' },
+      award:       { label:'รางวัล',          icon:'trophy' },
+      training:    { label:'อบรม / วิทยากร',  icon:'presentation' },
+    };
+    const ORDER = ['projects','certificate','award','training'];
+
+    let PROJECTS = [], SHOWCASE = [], activeTab = null;
+    let page = 1; const PER_PAGE = 9;   // แบ่งหน้า "ผลงาน" 9 รายการต่อหน้า
+    let lbList = [], lbIdx = 0;   // lightbox state
+
+    // ---------- lightbox ----------
+    function openLightbox(list, idx, cap) {
+      lbList = list; lbIdx = idx;
+      const multi = list.length > 1;
+      document.getElementById('lbPrev').classList.toggle('hidden', !multi);
+      document.getElementById('lbNext').classList.toggle('hidden', !multi);
+      renderLb(cap);
+      const lb = document.getElementById('lightbox');
+      lb.classList.remove('hidden'); lb.classList.add('flex');
+      document.body.classList.add('noscroll');
+      lucide.createIcons();
+    }
+    function renderLb(cap) {
+      document.getElementById('lbImg').src = lbList[lbIdx];
+      if (cap !== undefined) document.getElementById('lbCap').dataset.cap = cap || '';
+      const c = document.getElementById('lbCap').dataset.cap || '';
+      document.getElementById('lbCap').textContent = lbList.length>1 ? `${c}  (${lbIdx+1}/${lbList.length})` : c;
+    }
+    function lbStep(d){ lbIdx = (lbIdx + d + lbList.length) % lbList.length; renderLb(); }
+    document.getElementById('lbPrev').onclick = e => { e.stopPropagation(); lbStep(-1); };
+    document.getElementById('lbNext').onclick = e => { e.stopPropagation(); lbStep(1); };
+    let lbSwiped = false;
+    function closeLightbox(e) {
+      if (lbSwiped) { lbSwiped = false; return; }   // เพิ่งปัด → ไม่ปิด
+      if (e && (e.target.closest('figcaption') || e.target.closest('#lbPrev,#lbNext'))) return;
+      document.getElementById('lightbox').classList.add('hidden');
+      document.getElementById('lightbox').classList.remove('flex');
+      document.body.classList.remove('noscroll');
+    }
+    document.addEventListener('keydown', e => {
+      if (document.getElementById('lightbox').classList.contains('hidden')) return;
+      if (e.key==='ArrowLeft') lbStep(-1);
+      if (e.key==='ArrowRight') lbStep(1);
+      if (e.key==='Escape') closeLightbox();
+    });
+
+    // ===== ปัดซ้าย/ขวา (สัมผัส + ลากเมาส์) เปลี่ยนรูป =====
+    (function () {
+      const lb = document.getElementById('lightbox');
+      const img = document.getElementById('lbImg');
+      let startX = null, dragging = false;
+      const THRESHOLD = 45;
+      const begin = x => { if (lbList.length < 2) return; startX = x; dragging = true; img.style.transition = 'none'; };
+      const move = x => { if (!dragging || startX === null) return; img.style.transform = `translateX(${x - startX}px)`; };
+      const end = x => {
+        if (!dragging || startX === null) return;
+        const dx = x - startX; dragging = false;
+        img.style.transition = 'transform .2s ease'; img.style.transform = '';
+        if (Math.abs(dx) > 8) lbSwiped = true;  // ขยับพอควร → กันคลิกปิด
+        if (Math.abs(dx) > THRESHOLD) lbStep(dx < 0 ? 1 : -1);  // ปัดซ้าย=ถัดไป, ปัดขวา=ก่อนหน้า
+        startX = null;
+      };
+      // touch
+      lb.addEventListener('touchstart', e => begin(e.touches[0].clientX), { passive: true });
+      lb.addEventListener('touchmove',  e => move(e.touches[0].clientX),  { passive: true });
+      lb.addEventListener('touchend',   e => end((e.changedTouches[0]||{}).clientX ?? startX));
+      // mouse drag (desktop)
+      img.addEventListener('mousedown', e => { e.preventDefault(); begin(e.clientX); });
+      window.addEventListener('mousemove', e => move(e.clientX));
+      window.addEventListener('mouseup',   e => { if (dragging) end(e.clientX); });
+    })();
+
+    // ---------- project detail modal ----------
+    function projImages(p){ const a = (p.images||[]).filter(Boolean); if(p.image_url && !a.includes(p.image_url)) a.unshift(p.image_url); return a; }
+    function openProj(id) {
+      const p = PROJECTS.find(x=>x.id===id); if(!p) return;
+      document.getElementById('pmTitle').textContent = p.title;
+      document.getElementById('pmCat').textContent = p.category || '';
+      document.getElementById('pmDesc').textContent = p.description || '';
+      document.getElementById('pmTech').innerHTML = (p.tech||[]).filter(Boolean).map(t =>
+        `<span class="inline-flex items-center gap-1 text-xs bg-navy-50 text-navy-700 rounded-full px-2.5 py-1 font-medium"><i data-lucide="code-2" class="text-[13px]"></i>${t}</span>`).join('');
+      const imgs = projImages(p);
+      const box = document.getElementById('pmImages');
+      box.innerHTML = imgs.map((src,i)=>`
+        <button class="block aspect-video rounded-lg overflow-hidden border border-slate-200 hover:opacity-90"
+          onclick='openLightbox(${JSON.stringify(imgs)}, ${i}, ${JSON.stringify(p.title)})'>
+          <img src="${src}" class="w-full h-full object-cover"/>
+        </button>`).join('');
+      document.getElementById('pmNoImg').classList.toggle('hidden', imgs.length>0 || !!p.url);
+      const link = document.getElementById('pmLink');
+      if (p.url){ link.href=p.url; link.classList.remove('hidden'); } else link.classList.add('hidden');
+      const m = document.getElementById('projModal');
+      m.classList.remove('hidden'); m.classList.add('flex');
+      document.body.classList.add('noscroll');
+      lucide.createIcons();
+    }
+    function closeProj(){ const m=document.getElementById('projModal'); m.classList.add('hidden'); m.classList.remove('flex'); document.body.classList.remove('noscroll'); }
+    window.openProj = openProj; window.closeProj = closeProj; window.openLightbox = openLightbox;
+
+    // ---------- cards ----------
+    function projectCard(p) {
+      const imgs = projImages(p);
+      const cover = imgs[0];
+      const n = imgs.length;
+      const media = cover
+        ? `<div class="relative"><img src="${cover}" class="w-full h-40 object-cover rounded-t-xl"/>
+             ${n>1?`<span class="absolute bottom-2 right-2 text-[10px] bg-black/60 text-white rounded-full px-2 py-0.5 flex items-center gap-1"><i data-lucide="images"></i>${n}</span>`:''}</div>`
+        : `<div class="h-28 grid place-items-center rounded-t-xl bg-navy-50 text-navy-700"><i data-lucide="${p.icon||'folder-kanban'}" class="text-3xl"></i></div>`;
+      return `<button onclick="openProj('${p.id}')" class="reveal text-left bg-white rounded-xl border border-slate-200 hover:shadow-md hover:border-navy-300 transition overflow-hidden flex flex-col">
+        ${media}
+        <div class="p-4 flex-1 flex flex-col gap-1">
+          <h3 class="font-bold text-sm text-slate-800">${p.title}</h3>
+          <p class="text-xs text-slate-500 leading-snug flex-1">${p.description||''}</p>
+          ${(p.tech&&p.tech.length)?`<div class="flex flex-wrap gap-1 mt-1">
+            ${p.tech.slice(0,3).map(t=>`<span class="text-[10px] bg-slate-100 text-slate-600 rounded px-1.5 py-0.5">${t}</span>`).join('')}
+            ${p.tech.length>3?`<span class="text-[10px] text-slate-400">+${p.tech.length-3}</span>`:''}
+          </div>`:''}
+          <div class="flex items-center justify-between mt-1">
+            ${p.category?`<span class="text-[10px] px-2 py-0.5 rounded-full bg-navy-50 text-navy-600">${p.category}</span>`:'<span></span>'}
+            <span class="text-[11px] text-navy-600 flex items-center gap-1">ดูรายละเอียด <i data-lucide="arrow-right"></i></span>
+          </div>
+        </div>
+      </button>`;
+    }
+
+    function showcaseCard(it) {
+      const cap = [it.title, it.issuer].filter(Boolean).join(' — ');
+      const media = it.image_url
+        ? `<button onclick='openLightbox([${JSON.stringify(it.image_url)}], 0, ${JSON.stringify(cap)})' class="block w-full group">
+             <img src="${it.image_url}" class="w-full h-44 object-cover rounded-t-xl group-hover:opacity-90 transition"/></button>`
+        : `<div class="h-28 grid place-items-center rounded-t-xl bg-navy-50 text-navy-600"><i data-lucide="${TABS[it.type]?.icon||'award'}" class="text-3xl"></i></div>`;
+      const tag = it.tag?`<span class="inline-block text-[10px] px-2 py-0.5 rounded-full bg-gold-400/20 text-gold-600 font-semibold">${it.tag}</span>`:'';
+      const date = it.date_text?`<span class="text-[11px] text-slate-400 flex items-center gap-1"><i data-lucide="calendar"></i>${it.date_text}</span>`:'';
+      const link = it.url?`<a href="${it.url}" target="_blank" rel="noopener" class="text-[11px] text-navy-600 hover:underline flex items-center gap-1"><i data-lucide="external-link"></i>ดูเพิ่มเติม</a>`:'';
+      return `<div class="reveal bg-white rounded-xl border border-slate-200 hover:shadow-md transition overflow-hidden flex flex-col">
+        ${media}
+        <div class="p-4 flex-1 flex flex-col gap-1.5">
+          <div class="flex items-center justify-between gap-2">${tag}${date}</div>
+          ${it.title?`<h3 class="font-bold text-sm text-slate-800 leading-snug">${it.title}</h3>`:''}
+          ${it.issuer?`<p class="text-xs text-slate-500">${it.issuer}</p>`:''}
+          ${it.description?`<p class="text-xs text-slate-500 leading-snug">${it.description}</p>`:''}
+          ${link}
+        </div></div>`;
+    }
+
+    // ---------- tabs / render ----------
+    function hasData(t){ return t==='projects' ? PROJECTS.length>0 : SHOWCASE.some(x=>x.type===t); }
+    function renderTabs() {
+      const present = ORDER.filter(hasData);
+      if (!activeTab || !present.includes(activeTab)) activeTab = present[0] || null;
+      document.getElementById('tabs').innerHTML = present.map(t=>`
+        <button data-t="${t}" class="tab inline-flex items-center gap-1.5 text-sm px-4 py-2 rounded-full border transition
+          ${t===activeTab?'bg-navy-700 text-white border-navy-700':'bg-white text-slate-600 border-slate-200 hover:border-navy-300'}">
+          <i data-lucide="${TABS[t].icon}"></i> ${TABS[t].label}</button>`).join('');
+      document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{ activeTab=b.dataset.t; page=1; renderTabs(); renderGrid(); });
+      lucide.createIcons();
+    }
+    function renderPager(totalPages) {
+      const pager = document.getElementById('pager');
+      if (totalPages <= 1) { pager.innerHTML = ''; return; }
+      const btn = (label, p, disabled, active) =>
+        `<button data-p="${p}" ${disabled?'disabled':''} class="min-w-9 px-3 py-1.5 rounded-lg border text-sm transition
+          ${active?'bg-navy-700 text-white border-navy-700':'bg-white text-slate-600 border-slate-200 hover:border-navy-300'}
+          ${disabled?'opacity-40 cursor-not-allowed':''}">${label}</button>`;
+      let html = btn('‹', page-1, page<=1, false);
+      for (let i=1; i<=totalPages; i++) html += btn(i, i, false, i===page);
+      html += btn('›', page+1, page>=totalPages, false);
+      pager.innerHTML = html;
+      pager.querySelectorAll('[data-p]').forEach(b => b.onclick = () => {
+        const p = +b.dataset.p; if (p<1 || p>totalPages || p===page) return;
+        page = p; renderGrid();
+        document.getElementById('grid').scrollIntoView({ behavior:'smooth', block:'start' });
+      });
+    }
+    function renderGrid() {
+      let html;
+      if (activeTab==='projects') {
+        const total = PROJECTS.length;
+        const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
+        if (page > totalPages) page = totalPages;
+        const start = (page-1) * PER_PAGE;
+        html = PROJECTS.slice(start, start+PER_PAGE).map(projectCard).join('');
+        document.getElementById('grid').innerHTML = html || `<p class="col-span-full text-center text-slate-400 py-10">ยังไม่มีข้อมูลในหมวดนี้</p>`;
+        renderPager(totalPages);
+      } else {
+        html = SHOWCASE.filter(x=>x.type===activeTab).map(showcaseCard).join('');
+        document.getElementById('grid').innerHTML = html || `<p class="col-span-full text-center text-slate-400 py-10">ยังไม่มีข้อมูลในหมวดนี้</p>`;
+        document.getElementById('pager').innerHTML = '';
+      }
+      lucide.createIcons();
+    }
+
+    async function load() {
+      const [pr, sc] = await Promise.all([
+        sb.from('projects').select('*').order('sort_order',{ascending:true}).order('created_at',{ascending:false}),
+        sb.from('showcase').select('*').order('sort_order',{ascending:true}).order('created_at',{ascending:false}),
+      ]);
+      if (pr.error) { document.getElementById('loading').textContent='โหลดผลงานไม่สำเร็จ: '+pr.error.message; return; }
+      PROJECTS = pr.data || [];
+      SHOWCASE = sc.error ? [] : (sc.data || []);   // showcase อาจยังไม่สร้างตาราง — ไม่เป็นไร
+      if (!PROJECTS.length && !SHOWCASE.length) { document.getElementById('loading').textContent='ยังไม่มีข้อมูล'; return; }
+      renderTabs(); renderGrid();
+    }
+    load();
+    lucide.createIcons();
+
+    // หน้า loading: ซ่อนเมื่อโหลดเสร็จ + โชว์อีกครั้งตอนเปลี่ยนหน้า
+    (function () {
+      const root = document.documentElement;
+      const hide = () => root.classList.add('loaded');
+      const show = () => root.classList.remove('loaded');
+      if (document.readyState !== 'loading') setTimeout(hide, 300);
+      else document.addEventListener('DOMContentLoaded', () => setTimeout(hide, 300));
+      setTimeout(hide, 4000);
+      document.addEventListener('click', (e) => {
+        const a = e.target.closest('a[href]');
+        if (!a || a.target === '_blank' || a.hasAttribute('download')) return;
+        const href = a.getAttribute('href');
+        if (!href || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:')) return;
+        const url = new URL(a.href, location.href);
+        if (url.origin !== location.origin) return;
+        if (url.pathname === location.pathname && url.hash) return;
+        if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+        show();
+      });
+      window.addEventListener('pageshow', (e) => { if (e.persisted) hide(); });
+    })();
+  </script>
+</body>
+</html>

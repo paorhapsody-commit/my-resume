@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>จัดการผลงาน — Admin</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&family=Great+Vibes&display=swap" rel="stylesheet" />
+
+<script>
+  tailwind.config = { theme: { extend: {
+    fontFamily: { sans: ['Sarabun','sans-serif'] },
+    colors: {
+      navy: { 50:'#eef1fb',100:'#d6ddf5',200:'#aebbe9',300:'#7d90d7',400:'#4f66c2',500:'#3147a8',600:'#243a8c',700:'#1d2f73',800:'#172556',900:'#111b3f',950:'#0b1230' },
+      gold: { 400:'#f4c14b',500:'#eaa916',600:'#c98a0e' },
+    },
+  }}};
+</script>
+<style>
+  body { font-family:'Sarabun',sans-serif; }
+  .lucide { width:1em; height:1em; }
+  /* toast */
+  #toastWrap { position:fixed; bottom:20px; right:20px; z-index:80; display:flex; flex-direction:column; gap:8px; align-items:flex-end; }
+  .toast-item { animation: toastIn .25s ease; }
+  .toast-out { opacity:0; transform:translateX(14px); transition:all .3s ease; }
+  @keyframes toastIn { from { opacity:0; transform:translateX(14px); } to { opacity:1; transform:none; } }
+</style>
+</head>
+
+<body class="bg-slate-100 text-slate-800 antialiased">
+  <div id="toastWrap"></div>
+
+  <!-- ===== LOGIN ===== -->
+  <section id="loginView" class="min-h-screen grid place-items-center px-5 hidden">
+    <div class="w-full max-w-sm bg-white rounded-2xl shadow-xl p-7">
+      <div class="text-center mb-5">
+        <span class="mx-auto grid place-items-center w-14 h-14 rounded-full bg-navy-700 text-gold-400"><i data-lucide="lock"></i></span>
+        <h1 class="mt-3 text-xl font-extrabold text-navy-800">เข้าสู่ระบบจัดการผลงาน</h1>
+      </div>
+      <form id="loginForm" class="space-y-3">
+        <input id="email" type="email" required placeholder="อีเมล"
+          class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400" />
+        <input id="password" type="password" required placeholder="รหัสผ่าน"
+          class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400" />
+        <p id="loginErr" class="text-sm text-red-500 hidden"></p>
+        <button class="w-full rounded-lg bg-navy-700 hover:bg-navy-800 text-white font-medium py-2.5 transition">เข้าสู่ระบบ</button>
+      </form>
+      <div class="text-center mt-4">
+        <a href="setup.html" class="text-xs text-slate-400 hover:text-navy-600 inline-flex items-center gap-1"><i data-lucide="database"></i> ตั้งค่าการเชื่อมต่อฐานข้อมูล</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== DASHBOARD ===== -->
+  <section id="adminView" class="hidden">
+    <header class="sticky top-0 z-30 bg-white border-b border-slate-200">
+      <div class="max-w-5xl mx-auto px-5 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-2 text-navy-700 font-bold"><i data-lucide="folder-cog" class="text-gold-500"></i> จัดการผลงาน</div>
+        <div class="flex items-center gap-3">
+          <a href="works.html" target="_blank" class="text-sm text-navy-600 hover:underline flex items-center gap-1"><i data-lucide="external-link"></i> ดูหน้าเว็บ</a>
+          <button id="logoutBtn" class="text-sm text-slate-500 hover:text-red-500 flex items-center gap-1"><i data-lucide="log-out"></i> ออก</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-5 py-6">
+      <!-- tab bar -->
+      <div class="flex gap-2 mb-5 border-b border-slate-200">
+        <button data-tab="projects" class="tabBtn -mb-px px-4 py-2 text-sm font-semibold border-b-2 border-navy-700 text-navy-700">
+          <i data-lucide="folder-kanban"></i> ผลงาน
+        </button>
+        <button data-tab="showcase" class="tabBtn -mb-px px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-600">
+          <i data-lucide="award"></i> ใบประกาศ / รางวัล / อื่นๆ
+        </button>
+        <button data-tab="theme" class="tabBtn -mb-px px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-600">
+          <i data-lucide="palette"></i> ธีม / สี
+        </button>
+        <button data-tab="profile" class="tabBtn -mb-px px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-600">
+          <i data-lucide="id-card"></i> ข้อมูลส่วนตัว
+        </button>
+        <button data-tab="content" class="tabBtn -mb-px px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-600">
+          <i data-lucide="layout-list"></i> เนื้อหา
+        </button>
+      </div>
+
+      <!-- PANEL: projects -->
+      <div id="panel-projects">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-bold text-slate-700">รายการผลงาน (<span id="count">0</span>)</h2>
+          <button id="addBtn" class="inline-flex items-center gap-2 rounded-lg bg-gold-500 hover:bg-gold-600 text-white text-sm font-medium px-4 py-2 transition">
+            <i data-lucide="plus"></i> เพิ่มผลงาน
+          </button>
+        </div>
+        <div id="list" class="space-y-2"></div>
+      </div>
+
+      <!-- PANEL: showcase -->
+      <div id="panel-showcase" class="hidden">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-bold text-slate-700">ใบประกาศ / รางวัล / แกลเลอรี่ / อบรม (<span id="scCount">0</span>)</h2>
+          <button id="scAddBtn" class="inline-flex items-center gap-2 rounded-lg bg-gold-500 hover:bg-gold-600 text-white text-sm font-medium px-4 py-2 transition">
+            <i data-lucide="plus"></i> เพิ่มรายการ
+          </button>
+        </div>
+        <div id="scList" class="space-y-2"></div>
+      </div>
+
+      <!-- PANEL: theme -->
+      <div id="panel-theme" class="hidden">
+        <h2 class="text-lg font-bold text-slate-700 mb-1">ธีม / สีหน้า Resume</h2>
+        <p class="text-sm text-slate-500 mb-4">เลือกพรีเซ็ตสำเร็จรูป หรือปรับสีหลัก + สีเน้นเอง แล้วกดบันทึก — หน้า Resume จะใช้สีใหม่ทันทีเมื่อรีเฟรช</p>
+
+        <div class="grid md:grid-cols-2 gap-6">
+          <!-- controls -->
+          <div class="space-y-5">
+            <div>
+              <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide">พรีเซ็ตสำเร็จรูป</label>
+              <div id="th_presets" class="flex flex-wrap gap-2 mt-2"></div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="text-xs font-semibold text-slate-500">สีหลัก (Primary)</label>
+                <div class="flex items-center gap-2 mt-1">
+                  <input id="th_primary" type="color" class="w-12 h-10 rounded cursor-pointer border border-slate-300" />
+                  <input id="th_primary_hex" class="flex-1 rounded-lg border border-slate-300 px-2 py-2 text-sm font-mono" />
+                </div>
+              </div>
+              <div>
+                <label class="text-xs font-semibold text-slate-500">สีเน้น (Accent)</label>
+                <div class="flex items-center gap-2 mt-1">
+                  <input id="th_accent" type="color" class="w-12 h-10 rounded cursor-pointer border border-slate-300" />
+                  <input id="th_accent_hex" class="flex-1 rounded-lg border border-slate-300 px-2 py-2 text-sm font-mono" />
+                </div>
+              </div>
+            </div>
+            <div>
+              <label class="text-xs font-semibold text-slate-500">ภาพ Cover ส่วนหัว Resume (URL หรืออัปโหลด)</label>
+              <input id="th_cover_url" type="text" placeholder="ว่าง = ใช้พื้นหลังสีธีม" class="w-full mt-1 rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+              <div class="flex items-center gap-2 mt-1">
+                <input id="th_cover_file" type="file" accept="image/*" class="flex-1 text-sm" />
+                <button type="button" id="th_cover_clear" class="shrink-0 text-xs text-red-500 hover:underline">ล้างรูป</button>
+              </div>
+              <div id="th_cover_prev" class="mt-2"></div>
+            </div>
+            <div class="flex items-center gap-3 pt-1">
+              <button id="th_save" class="inline-flex items-center gap-2 rounded-lg bg-navy-700 hover:bg-navy-800 text-white text-sm font-medium px-5 py-2.5 transition">
+                <i data-lucide="save"></i> บันทึกธีม
+              </button>
+              <button id="th_reset" class="text-sm text-slate-500 hover:text-slate-700">คืนค่าเริ่มต้น</button>
+              <span id="th_status" class="text-xs text-slate-400"></span>
+            </div>
+          </div>
+
+          <!-- live preview -->
+          <div>
+            <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide">ตัวอย่าง</label>
+            <div id="themePreview" class="mt-2"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PANEL: profile -->
+      <div id="panel-profile" class="hidden">
+        <h2 class="text-lg font-bold text-slate-700 mb-1">ข้อมูลส่วนตัว (หน้า Resume)</h2>
+        <p class="text-sm text-slate-500 mb-4">แก้ไขชื่อ ตำแหน่ง รูป ภาพ cover ข้อมูลติดต่อ และแถบสรุป — บันทึกแล้วหน้า Resume จะอัปเดตเมื่อรีเฟรช</p>
+
+        <form id="pfForm" class="space-y-5 max-w-3xl">
+          <div>
+            <label class="text-xs font-semibold text-slate-500">รูปโปรไฟล์ (URL หรืออัปโหลด)</label>
+            <input id="pf_photo_url" type="text" placeholder="images/profile.jpg หรือ URL" class="w-full mt-1 rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+            <div class="flex items-center gap-2 mt-1">
+              <input id="pf_photo_file" type="file" accept="image/*" class="flex-1 text-sm" />
+              <button type="button" id="pf_photo_clear" class="shrink-0 text-xs text-red-500 hover:underline">ล้างรูป</button>
+            </div>
+            <div id="pf_photo_prev" class="mt-2"></div>
+            <p class="text-[11px] text-slate-400 mt-1">ว่าง = ใช้รูปเริ่มต้น/ตัวอักษรย่อ • ภาพ Cover ส่วนหัว ตั้งที่แท็บ “ธีม / สี”</p>
+          </div>
+          <div class="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label class="text-xs font-semibold text-slate-500">ชื่อ-นามสกุล (ไทย)</label>
+              <input id="pf_name" class="w-full mt-1 rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+            </div>
+            <div>
+              <label class="text-xs font-semibold text-slate-500">ชื่อภาษาอังกฤษ (ลายมือ)</label>
+              <input id="pf_namescript" class="w-full mt-1 rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+            </div>
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-slate-500">ตำแหน่ง / คำโปรย</label>
+            <input id="pf_title" class="w-full mt-1 rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-slate-500">แนะนำตัว (Profile)</label>
+            <textarea id="pf_summary" rows="3" class="w-full mt-1 rounded-lg border border-slate-300 px-3 py-2 text-sm"></textarea>
+          </div>
+
+          <div class="grid sm:grid-cols-3 gap-4">
+            <div><label class="text-xs font-semibold text-slate-500">โทรศัพท์</label><input id="pf_phone" class="w-full mt-1 rounded-lg border border-slate-300 px-3 py-2 text-sm" /></div>
+            <div><label class="text-xs font-semibold text-slate-500">อีเมล</label><input id="pf_email" class="w-full mt-1 rounded-lg border border-slate-300 px-3 py-2 text-sm" /></div>
+            <div><label class="text-xs font-semibold text-slate-500">ที่อยู่</label><input id="pf_address" class="w-full mt-1 rounded-lg border border-slate-300 px-3 py-2 text-sm" /></div>
+          </div>
+
+          <div>
+            <label class="text-xs font-semibold text-slate-500">แถบสรุป 3 ช่อง (ไอคอน lucide · หัวข้อ · ค่า) — <a href="https://lucide.dev/icons/" target="_blank" class="text-navy-600 hover:underline">🔎 ค้นหาไอคอน</a></label>
+            <div id="pf_badges_box" class="space-y-2 mt-1"></div>
+          </div>
+
+          <div class="flex items-center gap-3 pt-1">
+            <button type="submit" class="inline-flex items-center gap-2 rounded-lg bg-navy-700 hover:bg-navy-800 text-white text-sm font-medium px-5 py-2.5 transition">
+              <i data-lucide="save"></i> บันทึกข้อมูล
+            </button>
+            <span id="pf_status" class="text-xs text-slate-400"></span>
+          </div>
+        </form>
+      </div>
+
+      <!-- PANEL: content -->
+      <div id="panel-content" class="hidden space-y-8 max-w-3xl">
+        <div class="flex items-center justify-between sticky top-[60px] bg-slate-100 py-2 z-10">
+          <h2 class="text-lg font-bold text-slate-700">เนื้อหา Resume</h2>
+          <div class="flex items-center gap-3">
+            <span id="ct_status" class="text-xs text-slate-400"></span>
+            <button id="ct_save" class="inline-flex items-center gap-2 rounded-lg bg-navy-700 hover:bg-navy-800 text-white text-sm font-medium px-5 py-2.5"><i data-lucide="save"></i> บันทึกเนื้อหา</button>
+          </div>
+        </div>
+
+        <section><h3 class="font-bold text-slate-700 mb-2">หัวข้อบล็อก & การแสดงผล</h3><div id="ct_titles" class="space-y-2"></div></section>
+        <section><div class="flex items-center justify-between mb-2"><h3 class="font-bold text-slate-700">Core Expertise <a href="https://lucide.dev/icons/" target="_blank" class="text-[11px] font-normal text-navy-600 hover:underline">🔎 ค้นหาไอคอน</a></h3><button type="button" data-add="expertise" class="text-sm text-navy-600 hover:underline">+ เพิ่มการ์ด</button></div><div id="ct_expertise" class="space-y-3"></div></section>
+        <section><div class="flex items-center justify-between mb-2"><h3 class="font-bold text-slate-700">Work Experience (ไทม์ไลน์เรียงตามที่ใส่)</h3><button type="button" data-add="experience" class="text-sm text-navy-600 hover:underline">+ เพิ่มงาน</button></div><div id="ct_experience" class="space-y-3"></div></section>
+        <section><div class="flex items-center justify-between mb-2"><h3 class="font-bold text-slate-700">Education</h3><button type="button" data-add="education" class="text-sm text-navy-600 hover:underline">+ เพิ่ม</button></div><div id="ct_education" class="space-y-3"></div></section>
+        <section><h3 class="font-bold text-slate-700 mb-2">Additional (บรรทัดละ 1 ข้อ)</h3><textarea id="ct_additional" rows="4" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"></textarea></section>
+        <section><h3 class="font-bold text-slate-700 mb-2">Soft Skills <span class="font-normal text-slate-400">— บรรทัดละ "ไอคอน | ข้อความ"</span> <a href="https://lucide.dev/icons/" target="_blank" class="text-[11px] font-normal text-navy-600 hover:underline">🔎 ค้นหาไอคอน</a></h3><textarea id="ct_softskills" rows="4" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono"></textarea></section>
+        <section><div class="flex items-center justify-between mb-2"><h3 class="font-bold text-slate-700">Tools &amp; Platforms <span class="font-normal text-slate-400">— อัปโหลดไอคอนเข้าฐานข้อมูล หรือใส่ URL</span></h3><button type="button" data-add="tools" class="text-sm text-navy-600 hover:underline">+ เพิ่มเครื่องมือ</button></div><div id="ct_tools" class="space-y-2"></div></section>
+        <section><h3 class="font-bold text-slate-700 mb-2">คติประจำใจ <span class="font-normal text-slate-400">— ข้อความท้ายหน้า Resume</span></h3><input id="ct_motto" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="คติประจำใจ / สโลแกน" /></section>
+      </div>
+    </main>
+  </section>
+
+  <!-- ===== MODAL FORM ===== -->
+  <div id="modal" class="fixed inset-0 z-50 bg-black/40 hidden items-center justify-center px-4 py-8 overflow-y-auto">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg my-auto">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+        <h3 id="modalTitle" class="font-bold text-navy-800">เพิ่มผลงาน</h3>
+        <button id="closeModal" class="text-slate-400 hover:text-slate-700"><i data-lucide="x"></i></button>
+      </div>
+      <form id="projForm" class="p-5 space-y-3">
+        <input type="hidden" id="f_id" />
+        <div>
+          <label class="text-xs font-semibold text-slate-500">ชื่อผลงาน *</label>
+          <input id="f_title" required class="w-full mt-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400" />
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-slate-500">คำอธิบาย (เต็ม — ใช้ในหน้าผลงาน)</label>
+          <textarea id="f_desc" rows="2" class="w-full mt-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400"></textarea>
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-slate-500">คำอธิบายสั้น (สำหรับหน้า Resume)</label>
+          <input id="f_shortdesc" maxlength="80" placeholder="สั้นๆ ไม่เกิน ~80 ตัวอักษร" class="w-full mt-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400" />
+          <p class="text-[11px] text-slate-400 mt-1">ว่าง = ใช้คำอธิบายเต็ม</p>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs font-semibold text-slate-500">ลิงก์ (URL)</label>
+            <input id="f_url" type="url" placeholder="https://…" class="w-full mt-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400" />
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-slate-500">หมวด</label>
+            <input id="f_cat" list="catList" placeholder="ระบบงาน" class="w-full mt-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400" />
+            <datalist id="catList"><option>ระบบงาน</option><option>สื่อ</option><option>รางวัล</option></datalist>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs font-semibold text-slate-500">ไอคอน (lucide)</label>
+            <input id="f_icon" placeholder="folder-kanban" class="w-full mt-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400" />
+            <a href="https://lucide.dev/icons/" target="_blank" class="text-[11px] text-navy-500 hover:underline">ดูชื่อไอคอน →</a>
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-slate-500">ลำดับ (น้อย=บนสุด)</label>
+            <input id="f_sort" type="number" value="100" class="w-full mt-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400" />
+          </div>
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-slate-500">เครื่องมือ/เทคโนโลยีที่ใช้</label>
+          <div id="techBox" class="flex flex-wrap items-center gap-1.5 mt-1 rounded-lg border border-slate-300 px-2 py-1.5 focus-within:ring-2 focus-within:ring-navy-400">
+            <input id="f_techinput" list="techList" placeholder="พิมพ์แล้วกด Enter (เช่น PHP, MySQL)"
+              class="flex-1 min-w-[140px] text-sm py-1 focus:outline-none" />
+          </div>
+          <datalist id="techList">
+            <option>PHP</option><option>MySQL</option><option>JavaScript</option><option>Node.js</option>
+            <option>Next.js</option><option>React</option><option>Tailwind CSS</option><option>Bootstrap</option>
+            <option>Python</option><option>Moodle</option><option>Supabase</option><option>PostgreSQL</option>
+            <option>Power BI</option><option>Telegram API</option><option>REST API</option><option>jQuery</option>
+          </datalist>
+          <p class="text-[11px] text-slate-400 mt-1">กด Enter หรือ , เพื่อเพิ่ม • คลิก × ที่ป้ายเพื่อลบ</p>
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-slate-500">ภาพประกอบ (เพิ่มได้หลายภาพ — เช่น screenshot ระบบที่ต้อง login)</label>
+          <div id="imgList" class="flex flex-wrap gap-2 mt-2"></div>
+          <div class="flex gap-2 mt-2">
+            <input id="f_imgurl" type="url" placeholder="วาง URL รูป (ประหยัดพื้นที่ ไม่ต้องอัปโหลด)"
+              class="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400" />
+            <button type="button" id="f_addurl" class="shrink-0 rounded-lg bg-navy-100 hover:bg-navy-200 text-navy-700 text-sm font-medium px-3">+ URL</button>
+          </div>
+          <input id="f_image" type="file" accept="image/*" multiple class="w-full mt-2 text-sm" />
+          <p class="text-[11px] text-slate-400 mt-1">🖱️ ลากภาพเพื่อสลับลำดับ • ภาพแรก = รูปปก • คลิก × ที่มุมภาพเพื่อลบ • วาง URL หรืออัปโหลดไฟล์ก็ได้</p>
+        </div>
+        <p id="formErr" class="text-sm text-red-500 hidden"></p>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" id="cancelBtn" class="rounded-lg px-4 py-2 text-sm text-slate-600 hover:bg-slate-100">ยกเลิก</button>
+          <button id="saveBtn" class="rounded-lg bg-navy-700 hover:bg-navy-800 text-white text-sm font-medium px-5 py-2 transition">บันทึก</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===== MODAL: showcase ===== -->
+  <div id="scModal" class="fixed inset-0 z-50 bg-black/40 hidden items-center justify-center px-4 py-8 overflow-y-auto">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg my-auto">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+        <h3 id="scModalTitle" class="font-bold text-navy-800">เพิ่มรายการ</h3>
+        <button id="scCloseModal" class="text-slate-400 hover:text-slate-700"><i data-lucide="x"></i></button>
+      </div>
+      <form id="scForm" class="p-5 space-y-3">
+        <input type="hidden" id="sc_id" />
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs font-semibold text-slate-500">ประเภท *</label>
+            <select id="sc_type" class="w-full mt-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400">
+              <option value="certificate">ใบประกาศ / Certificate</option>
+              <option value="award">รางวัล / Award</option>
+              <option value="training">อบรม / วิทยากร</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-slate-500">วันที่/ปี</label>
+            <input id="sc_date" placeholder="ก.ค. 2566" class="w-full mt-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400" />
+          </div>
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-slate-500">ชื่อ/หัวข้อ</label>
+          <input id="sc_title" class="w-full mt-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400" />
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-slate-500">หน่วยงาน/ผู้จัด/งาน</label>
+          <input id="sc_issuer" class="w-full mt-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400" />
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-slate-500">รายละเอียด</label>
+          <textarea id="sc_desc" rows="2" class="w-full mt-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400"></textarea>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs font-semibold text-slate-500">ป้าย (ไม่บังคับ)</label>
+            <input id="sc_tag" placeholder="วิทยากร / รองชนะเลิศ" class="w-full mt-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400" />
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-slate-500">ลำดับ (น้อย=บนสุด)</label>
+            <input id="sc_sort" type="number" value="100" class="w-full mt-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400" />
+          </div>
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-slate-500">ลิงก์ตรวจสอบ/อ้างอิง (ไม่บังคับ)</label>
+          <input id="sc_url" type="url" placeholder="https://…" class="w-full mt-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400" />
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-slate-500">รูป (ใบประกาศ/ภาพ — แนะนำให้ใส่)</label>
+          <input id="sc_imgurl" type="url" placeholder="วาง URL รูป (ประหยัดพื้นที่ ไม่ต้องอัปโหลด)"
+            class="w-full mt-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400" />
+          <input id="sc_image" type="file" accept="image/*" class="w-full mt-2 text-sm" />
+          <p class="text-[11px] text-slate-400 mt-1">วาง URL หรืออัปโหลดไฟล์ก็ได้ (ถ้าอัปโหลดไฟล์จะใช้ไฟล์เป็นหลัก)</p>
+          <div id="scImgPreview" class="mt-2"></div>
+        </div>
+        <p id="scFormErr" class="text-sm text-red-500 hidden"></p>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" id="scCancelBtn" class="rounded-lg px-4 py-2 text-sm text-slate-600 hover:bg-slate-100">ยกเลิก</button>
+          <button id="scSaveBtn" class="rounded-lg bg-navy-700 hover:bg-navy-800 text-white text-sm font-medium px-5 py-2 transition">บันทึก</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="theme.js"></script>
+  <script>
+    const sb = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+    const $ = id => document.getElementById(id);
+    const show = (el,on) => el.classList.toggle('hidden', !on);
+
+    // ---------- toast แจ้งเตือน ----------
+    function toast(msg, kind = 'ok') {
+      const colors = { ok:'bg-emerald-600', err:'bg-red-600', warn:'bg-amber-500', info:'bg-navy-700' };
+      const icons  = { ok:'check-circle-2', err:'alert-circle', warn:'alert-triangle', info:'info' };
+      const el = document.createElement('div');
+      el.className = `toast-item flex items-center gap-2 ${colors[kind]||colors.info} text-white text-sm px-4 py-2.5 rounded-lg shadow-lg max-w-xs`;
+      el.innerHTML = `<i data-lucide="${icons[kind]||'info'}"></i><span></span>`;
+      el.querySelector('span').textContent = msg;
+      document.getElementById('toastWrap').appendChild(el);
+      lucide.createIcons();
+      setTimeout(() => { el.classList.add('toast-out'); setTimeout(() => el.remove(), 320); }, 2600);
+    }
+
+    // ---------- บีบอัดรูปฝั่ง browser ก่อนอัปโหลด ----------
+    // ย่อด้านยาวสุดไม่เกิน maxDim px + แปลงเป็น WebP คุณภาพ quality
+    async function compressImage(file, { maxDim = 1600, quality = 0.8 } = {}) {
+      if (!/^image\/(jpe?g|png|webp)$/i.test(file.type)) return file;  // ข้าม svg/gif → ใช้ไฟล์เดิม
+      const bmp = await createImageBitmap(file).catch(() => null);
+      if (!bmp) return file;
+      const scale = Math.min(1, maxDim / Math.max(bmp.width, bmp.height));
+      const w = Math.round(bmp.width * scale), h = Math.round(bmp.height * scale);
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(bmp, 0, 0, w, h);
+      bmp.close && bmp.close();
+      const blob = await new Promise(res => canvas.toBlob(res, 'image/webp', quality));
+      if (!blob || blob.size >= file.size) return file;   // ถ้าไม่เล็กลง ใช้ไฟล์เดิม
+      return blob;                                         // Blob (image/webp, ไม่มี .name)
+    }
+
+    // อัปโหลด blob/ไฟล์ไป bucket ที่ระบุ คืน public URL
+    async function uploadTo(bucket, file) {
+      const blob = await compressImage(file);
+      const ext = (blob.name ? blob.name.split('.').pop()
+                             : (blob.type.split('/')[1] || 'jpg')).replace('jpeg','jpg');
+      const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error } = await sb.storage.from(bucket).upload(path, blob, { upsert:false, contentType: blob.type });
+      if (error) throw error;
+      return sb.storage.from(bucket).getPublicUrl(path).data.publicUrl;
+    }
+
+    // อัปโหลดแบบทับไฟล์เดิม (path คงที่) — ประหยัดพื้นที่ ไม่สะสมไฟล์
+    async function uploadFixed(bucket, file, path) {
+      const blob = await compressImage(file);
+      const { error } = await sb.storage.from(bucket).upload(path, blob, { upsert:true, contentType: blob.type });
+      if (error) throw error;
+      return sb.storage.from(bucket).getPublicUrl(path).data.publicUrl + '?v=' + Date.now();  // ?v กัน cache รูปเก่า
+    }
+
+    // ---------- AUTH ----------
+    async function refreshAuth() {
+      const { data:{ session } } = await sb.auth.getSession();
+      if (session) { show($('loginView'),false); show($('adminView'),true); loadList(); }
+      else { show($('adminView'),false); show($('loginView'),true); }
+      lucide.createIcons();
+    }
+
+    $('loginForm').onsubmit = async (e) => {
+      e.preventDefault();
+      show($('loginErr'),false);
+      const { error } = await sb.auth.signInWithPassword({ email:$('email').value, password:$('password').value });
+      if (error) { $('loginErr').textContent = 'เข้าสู่ระบบไม่สำเร็จ: '+error.message; show($('loginErr'),true); }
+      else refreshAuth();
+    };
+    $('logoutBtn').onclick = async () => { await sb.auth.signOut(); refreshAuth(); };
+
+    // ---------- LIST ----------
+    let projData = [], rowDrag = null;
+    const cover = p => (p.images||[]).filter(Boolean)[0] || p.image_url;
+    const nImg  = p => { const a=(p.images||[]).filter(Boolean); if(p.image_url&&!a.includes(p.image_url))a.unshift(p.image_url); return a.length; };
+
+    async function loadList() {
+      const { data, error } = await sb.from('projects').select('*')
+        .order('sort_order',{ascending:true}).order('created_at',{ascending:false});
+      if (error) { $('list').innerHTML = `<p class="text-red-500">${error.message}</p>`; return; }
+      projData = data;
+      renderList();
+    }
+
+    function renderList() {
+      $('count').textContent = projData.length;
+      $('list').innerHTML = projData.map((p,i) => `
+        <div draggable="true" data-row="${i}" class="projRow flex items-center gap-3 bg-white rounded-xl border border-slate-200 p-3 transition">
+          <span class="dragHandle cursor-grab active:cursor-grabbing text-slate-300 hover:text-slate-500 shrink-0"><i data-lucide="grip-vertical"></i></span>
+          <span class="grid place-items-center w-10 h-10 rounded-lg bg-navy-50 text-navy-700 shrink-0 overflow-hidden">
+            ${cover(p)?`<img src="${cover(p)}" class="w-10 h-10 object-cover"/>`:`<i data-lucide="${p.icon||'folder-kanban'}"></i>`}
+          </span>
+          <div class="flex-1 min-w-0">
+            <p class="font-semibold text-sm text-slate-800 truncate">${p.title}</p>
+            <p class="text-xs text-slate-400 truncate">${p.category||''} · ${p.description||''}${nImg(p)?` · 🖼️ ${nImg(p)} ภาพ`:''}</p>
+          </div>
+          <button data-star='${p.id}' data-on='${p.featured?1:0}' title="แสดงในหน้า Resume (สูงสุด 8)" class="p-2 ${p.featured?'text-gold-500':'text-slate-300'} hover:text-gold-500"><i data-lucide="star"></i></button>
+          <button data-edit='${p.id}' class="text-navy-500 hover:text-navy-700 p-2"><i data-lucide="pencil"></i></button>
+          <button data-del='${p.id}' class="text-slate-400 hover:text-red-500 p-2"><i data-lucide="trash-2"></i></button>
+        </div>`).join('') || '<p class="text-slate-400 text-center py-8">ยังไม่มีผลงาน — กด “เพิ่มผลงาน”</p>';
+
+      // ลากเรียงลำดับ
+      $('list').querySelectorAll('.projRow').forEach(el => {
+        el.ondragstart = e => { rowDrag = +el.dataset.row; e.dataTransfer.effectAllowed='move'; el.classList.add('opacity-40'); };
+        el.ondragend   = () => { rowDrag = null; el.classList.remove('opacity-40'); };
+        el.ondragover  = e => { e.preventDefault(); el.classList.add('ring-2','ring-navy-400'); };
+        el.ondragleave = () => el.classList.remove('ring-2','ring-navy-400');
+        el.ondrop      = async e => {
+          e.preventDefault();
+          const to = +el.dataset.row;
+          if (rowDrag===null || rowDrag===to) return;
+          const [m] = projData.splice(rowDrag,1); projData.splice(to,0,m);
+          rowDrag = null; renderList(); saveOrder();
+        };
+      });
+      document.querySelectorAll('[data-star]').forEach(b => b.onclick = () => starToggle('projects', b.dataset.star, b.dataset.on !== '1'));
+      document.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => openModal(projData.find(x=>x.id===b.dataset.edit)));
+      document.querySelectorAll('[data-del]').forEach(b => b.onclick = () => del(b.dataset.del, projData.find(x=>x.id===b.dataset.del)));
+      lucide.createIcons();
+    }
+
+    // บันทึกลำดับใหม่ (อัปเดตเฉพาะแถวที่ sort_order เปลี่ยน) — ใช้ระยะ 10 เผื่อแทรกภายหลัง
+    async function saveOrder() {
+      $('ordSaving')?.remove();
+      $('count').insertAdjacentHTML('afterend', '<span id="ordSaving" class="ml-2 text-xs text-slate-400">กำลังบันทึกลำดับ…</span>');
+      const ups = [];
+      projData.forEach((p,i) => { const so=(i+1)*10; if (p.sort_order!==so){ p.sort_order=so; ups.push(sb.from('projects').update({sort_order:so}).eq('id',p.id)); } });
+      await Promise.all(ups);
+      const s = $('ordSaving'); if (s){ s.textContent='บันทึกลำดับแล้ว ✓'; setTimeout(()=>s.remove(),1500); }
+      toast('บันทึกลำดับแล้ว');
+    }
+
+    // ---------- MODAL ----------
+    // curImages = แต่ละรายการเป็น { kind:'url', src } หรือ { kind:'file', file, src(objectURL) }
+    let curImages = [], removedImages = [], dragIdx = null;
+
+    function renderImgList() {
+      $('imgList').innerHTML = curImages.map((it,i) => `
+        <div draggable="true" data-idx="${i}"
+             class="imgItem relative w-20 h-20 rounded-lg overflow-hidden border border-slate-200 cursor-move transition">
+          <img src="${it.src}" class="w-full h-full object-cover pointer-events-none"/>
+          ${i===0?'<span class="absolute bottom-0 inset-x-0 text-[9px] text-center bg-navy-700/80 text-white">ปก</span>':''}
+          ${it.kind==='file'?'<span class="absolute top-0.5 left-0.5 text-[8px] bg-emerald-500 text-white rounded px-1">ใหม่</span>':''}
+          <button type="button" data-rm="${i}" class="absolute top-0.5 right-0.5 w-5 h-5 grid place-items-center rounded-full bg-black/60 text-white text-xs hover:bg-red-500">×</button>
+        </div>`).join('');
+
+      // ลากสลับลำดับ
+      $('imgList').querySelectorAll('.imgItem').forEach(el => {
+        el.ondragstart = e => { dragIdx = +el.dataset.idx; e.dataTransfer.effectAllowed = 'move'; el.classList.add('opacity-40'); };
+        el.ondragend   = () => { dragIdx = null; renderImgList(); };
+        el.ondragover  = e => { e.preventDefault(); el.classList.add('ring-2','ring-navy-500'); };
+        el.ondragleave = () => el.classList.remove('ring-2','ring-navy-500');
+        el.ondrop      = e => {
+          e.preventDefault();
+          const to = +el.dataset.idx;
+          if (dragIdx===null || dragIdx===to) return;
+          const [moved] = curImages.splice(dragIdx, 1);
+          curImages.splice(to, 0, moved);
+          dragIdx = null; renderImgList();
+        };
+      });
+
+      $('imgList').querySelectorAll('[data-rm]').forEach(b => b.onclick = () => {
+        const it = curImages[+b.dataset.rm];
+        if (it.kind==='file') URL.revokeObjectURL(it.src);   // ปล่อย preview ชั่วคราว
+        else removedImages.push(it.src);                     // url เดิม (ถ้าอยู่ใน storage จะลบตอน save)
+        curImages.splice(+b.dataset.rm, 1); renderImgList();
+      });
+    }
+
+    function openModal(p) {
+      $('formErr').classList.add('hidden');
+      $('f_image').value = ''; $('f_imgurl').value = '';
+      $('modalTitle').textContent = p ? 'แก้ไขผลงาน' : 'เพิ่มผลงาน';
+      $('f_id').value      = p?.id   || '';
+      $('f_title').value   = p?.title|| '';
+      $('f_desc').value    = p?.description || '';
+      $('f_shortdesc').value = p?.short_desc || '';
+      $('f_url').value     = p?.url  || '';
+      $('f_cat').value     = p?.category || 'ระบบงาน';
+      $('f_icon').value    = p?.icon || 'folder-kanban';
+      $('f_sort').value    = p?.sort_order ?? 100;
+      // รวมรูปเดิม: image_url (ปก) + images[]
+      const urls = (p?.images||[]).filter(Boolean).slice();
+      if (p?.image_url && !urls.includes(p.image_url)) urls.unshift(p.image_url);
+      curImages = urls.map(src => ({ kind:'url', src }));
+      removedImages = [];
+      renderImgList();
+      curTech = (p?.tech||[]).filter(Boolean).slice(); $('f_techinput').value = ''; renderTech();
+      show($('modal'),true); $('modal').classList.add('flex');
+      lucide.createIcons();
+    }
+    function closeModal(){ show($('modal'),false); $('modal').classList.remove('flex'); }
+    $('addBtn').onclick = () => openModal(null);
+    $('closeModal').onclick = $('cancelBtn').onclick = closeModal;
+    // วาง URL → เพิ่ม + เห็น preview ทันที
+    $('f_addurl').onclick = () => {
+      const u = $('f_imgurl').value.trim();
+      if (!u) return;
+      if (!/^https?:\/\//i.test(u)) { alert('URL ต้องขึ้นต้นด้วย http:// หรือ https://'); return; }
+      curImages.push({ kind:'url', src:u }); $('f_imgurl').value = ''; renderImgList();
+    };
+    // เลือกไฟล์ → เพิ่ม + เห็น preview ทันที (อัปโหลดจริงตอนกดบันทึก)
+    $('f_image').onchange = () => {
+      for (const file of $('f_image').files) curImages.push({ kind:'file', file, src:URL.createObjectURL(file) });
+      $('f_image').value = ''; renderImgList();
+    };
+
+    // ---------- tech tags ----------
+    let curTech = [];
+    function renderTech() {
+      const box = $('techBox'), input = $('f_techinput');
+      box.querySelectorAll('.techChip').forEach(n => n.remove());
+      curTech.forEach((t,i) => {
+        const chip = document.createElement('span');
+        chip.className = 'techChip inline-flex items-center gap-1 text-xs bg-navy-50 text-navy-700 rounded-full pl-2 pr-1 py-0.5';
+        chip.innerHTML = `${t}<button type="button" data-ti="${i}" class="w-4 h-4 grid place-items-center rounded-full hover:bg-red-100 hover:text-red-500">×</button>`;
+        box.insertBefore(chip, input);
+      });
+      box.querySelectorAll('[data-ti]').forEach(b => b.onclick = () => { curTech.splice(+b.dataset.ti,1); renderTech(); });
+    }
+    function addTech(val) {
+      val.split(',').map(s => s.trim()).filter(Boolean).forEach(t => {
+        if (!curTech.some(x => x.toLowerCase() === t.toLowerCase())) curTech.push(t);
+      });
+      renderTech();
+    }
+    $('f_techinput').onkeydown = e => {
+      if (e.key==='Enter' || e.key===',') { e.preventDefault(); addTech($('f_techinput').value); $('f_techinput').value=''; }
+      else if (e.key==='Backspace' && !$('f_techinput').value && curTech.length) { curTech.pop(); renderTech(); }
+    };
+    $('f_techinput').onblur = () => { if ($('f_techinput').value.trim()){ addTech($('f_techinput').value); $('f_techinput').value=''; } };
+
+    // upload helper -> returns public URL (บีบอัดให้อัตโนมัติ)
+    const uploadImage = (file) => uploadTo('project-images', file);
+
+    $('projForm').onsubmit = async (e) => {
+      e.preventDefault();
+      show($('formErr'),false);
+      $('saveBtn').disabled = true; $('saveBtn').textContent = 'กำลังบันทึก…';
+      try {
+        // เก็บ tech ที่ยังพิมพ์ค้างในช่อง (ยังไม่ได้กด Enter)
+        if ($('f_techinput').value.trim()) { addTech($('f_techinput').value); $('f_techinput').value=''; }
+        // ไล่ตามลำดับ: ไฟล์ใหม่ → อัปโหลด (บีบอัด) ได้ URL, ส่วน url เดิมใช้ตามเดิม
+        const finalUrls = [];
+        for (const it of curImages) finalUrls.push(it.kind==='file' ? await uploadImage(it.file) : it.src);
+
+        const row = {
+          title: $('f_title').value.trim(),
+          description: $('f_desc').value.trim() || null,
+          short_desc: $('f_shortdesc').value.trim() || null,
+          url: $('f_url').value.trim() || null,
+          category: $('f_cat').value.trim() || null,
+          icon: $('f_icon').value.trim() || 'folder-kanban',
+          sort_order: parseInt($('f_sort').value || '100', 10),
+          tech: curTech,
+          images: finalUrls,
+          image_url: finalUrls[0] || null,   // ปก = ภาพแรก
+        };
+
+        const id = $('f_id').value;
+        const res = id
+          ? await sb.from('projects').update(row).eq('id', id)
+          : await sb.from('projects').insert(row);
+        if (res.error) throw res.error;
+
+        // ลบไฟล์รูปที่ถูกเอาออกจริงๆ ออกจาก Storage
+        for (const url of removedImages) {
+          const path = (url||'').split('/project-images/')[1];
+          if (path) sb.storage.from('project-images').remove([path]);
+        }
+        closeModal(); loadList(); toast('บันทึกผลงานแล้ว');
+      } catch (err) {
+        $('formErr').textContent = 'บันทึกไม่สำเร็จ: ' + err.message; show($('formErr'),true); toast('บันทึกไม่สำเร็จ', 'err');
+      } finally {
+        $('saveBtn').disabled = false; $('saveBtn').textContent = 'บันทึก';
+      }
+    };
+
+    async function del(id, p) {
+      if (!confirm('ลบผลงานนี้?')) return;
+      const { error } = await sb.from('projects').delete().eq('id', id);
+      if (error) { alert('ลบไม่สำเร็จ: '+error.message); return; }
+      // ลบไฟล์รูปทั้งหมดจาก storage
+      const urls = [...((p?.images)||[])]; if (p?.image_url) urls.push(p.image_url);
+      const paths = urls.map(u => (u||'').split('/project-images/')[1]).filter(Boolean);
+      if (paths.length) sb.storage.from('project-images').remove(paths);
+      loadList(); toast('ลบผลงานแล้ว');
+    }
+
+    // ---------- ติดดาว (featured) แสดงในหน้า Resume สูงสุด 8 รวม projects+showcase ----------
+    const FEATURED_MAX = 8;
+    async function featuredCount() {
+      const [a, b] = await Promise.all([
+        sb.from('projects').select('id', { count:'exact', head:true }).eq('featured', true),
+        sb.from('showcase').select('id', { count:'exact', head:true }).eq('featured', true),
+      ]);
+      return (a.count || 0) + (b.count || 0);
+    }
+    async function starToggle(table, id, turnOn) {
+      if (turnOn && (await featuredCount()) >= FEATURED_MAX) {
+        alert(`แสดงในหน้า Resume ได้สูงสุด ${FEATURED_MAX} รายการ (รวมผลงาน + ใบประกาศ)\nตอนนี้ครบแล้ว — เอาดาวออกจากบางรายการก่อน`);
+        return;
+      }
+      const { error } = await sb.from(table).update({ featured: turnOn }).eq('id', id);
+      if (error) { alert('ผิดพลาด: ' + error.message); return; }
+      table === 'projects' ? loadList() : scLoadList();
+    }
+
+    // ---------- TABS ----------
+    document.querySelectorAll('.tabBtn').forEach(b => b.onclick = () => {
+      const t = b.dataset.tab;
+      document.querySelectorAll('.tabBtn').forEach(x => {
+        const on = x.dataset.tab === t;
+        x.classList.toggle('border-navy-700', on);
+        x.classList.toggle('text-navy-700', on);
+        x.classList.toggle('border-transparent', !on);
+        x.classList.toggle('text-slate-400', !on);
+      });
+      show($('panel-projects'), t==='projects');
+      show($('panel-showcase'), t==='showcase');
+      show($('panel-theme'), t==='theme');
+      show($('panel-profile'), t==='profile');
+      show($('panel-content'), t==='content');
+      if (t==='showcase') scLoadList();
+      if (t==='theme') themeLoad();
+      if (t==='profile') profileLoad();
+      if (t==='content') contentLoad();
+    });
+
+    // ---------- PROFILE / ข้อมูลส่วนตัว ----------
+    const DEFAULT_PROFILE = {
+      photo_url: 'images/profile.jpg', cover_url: '',
+      name: 'นายสมยศ ดีวิจิตร', name_script: 'Somyot Deewijit',
+      title: 'เจ้าพนักงานห้องสมุด • เทคโนโลยีการศึกษา • สื่อดิจิทัล • พัฒนาระบบงาน',
+      summary: 'บุคลากรด้านเทคโนโลยีการศึกษาและสื่อดิจิทัล มีประสบการณ์ในการพัฒนาระบบสารสนเทศ การผลิตสื่อมัลติมีเดีย การถ่ายทอดสด และการวิเคราะห์ข้อมูล มีความถนัดในการนำเทคโนโลยีและ AI มาพัฒนากระบวนการทำงานขององค์กรสู่การเป็น Smart Office ควบคู่กับการทำงานเป็นทีมและการแก้ไขปัญหาอย่างเป็นระบบ',
+      contact: { phone: '064-349-3073', email: 'pao.somyot@gmail.com', address: '3/1 ม.1 ถ.ลานไทร ซอย 3 ต.ตันหยงมัส อ.ระแงะ จ.นราธิวาส 96130' },
+      badges: [
+        { icon: 'briefcase', label: 'ประสบการณ์', value: '4+ ปี' },
+        { icon: 'monitor-smartphone', label: 'ความเชี่ยวชาญ', value: 'เทคโนโลยีดิจิทัล' },
+        { icon: 'map-pin', label: 'ที่ตั้ง', value: 'ระแงะ, นราธิวาส' },
+      ],
+    };
+
+    function buildBadgeRows() {
+      $('pf_badges_box').innerHTML = [0,1,2].map(i => `
+        <div class="grid grid-cols-3 gap-2">
+          <input id="pf_b${i}_icon"  placeholder="ไอคอน (เช่น briefcase)" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm" />
+          <input id="pf_b${i}_label" placeholder="หัวข้อ" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm" />
+          <input id="pf_b${i}_value" placeholder="ค่า" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm" />
+        </div>`).join('');
+    }
+
+    async function profileLoad() {
+      buildBadgeRows();
+      const { data } = await sb.from('site_settings').select('value').eq('key','profile').maybeSingle();
+      const p = (data && data.value) ? (typeof data.value==='string'?JSON.parse(data.value):data.value) : DEFAULT_PROFILE;
+      $('pf_photo_url').value = p.photo_url || '';
+      $('pf_name').value = p.name || ''; $('pf_namescript').value = p.name_script || '';
+      $('pf_title').value = p.title || ''; $('pf_summary').value = p.summary || '';
+      const c = p.contact || {}; $('pf_phone').value = c.phone || ''; $('pf_email').value = c.email || ''; $('pf_address').value = c.address || '';
+      const bs = (p.badges && p.badges.length) ? p.badges : DEFAULT_PROFILE.badges;
+      [0,1,2].forEach(i => { const b = bs[i]||{}; $('pf_b'+i+'_icon').value=b.icon||''; $('pf_b'+i+'_label').value=b.label||''; $('pf_b'+i+'_value').value=b.value||''; });
+      $('pf_photo_file').value='';
+      pfPhotoPreview();
+    }
+    function pfPhotoPreview() {
+      const f = $('pf_photo_file').files[0];
+      const src = f ? URL.createObjectURL(f) : $('pf_photo_url').value.trim();
+      $('pf_photo_prev').innerHTML = src ? `<img src="${src}" class="h-20 w-20 rounded-full object-cover border border-slate-200"/>` : '';
+    }
+    $('pf_photo_url').oninput = pfPhotoPreview;
+    $('pf_photo_file').onchange = pfPhotoPreview;
+    $('pf_photo_clear').onclick = () => { $('pf_photo_url').value=''; $('pf_photo_file').value=''; pfPhotoPreview(); };
+
+    $('pfForm').onsubmit = async (e) => {
+      e.preventDefault();
+      $('pf_status').textContent = 'กำลังบันทึก…';
+      try {
+        let photo = $('pf_photo_url').value.trim();
+        if ($('pf_photo_file').files[0]) photo = await uploadFixed('project-images', $('pf_photo_file').files[0], 'profile/photo');
+        const badges = [0,1,2].map(i => ({
+          icon: $('pf_b'+i+'_icon').value.trim() || 'star',
+          label: $('pf_b'+i+'_label').value.trim(),
+          value: $('pf_b'+i+'_value').value.trim(),
+        })).filter(b => b.label || b.value);
+        const value = {
+          photo_url: photo,
+          name: $('pf_name').value.trim(), name_script: $('pf_namescript').value.trim(),
+          title: $('pf_title').value.trim(), summary: $('pf_summary').value.trim(),
+          contact: { phone: $('pf_phone').value.trim(), email: $('pf_email').value.trim(), address: $('pf_address').value.trim() },
+          badges,
+        };
+        const { error } = await sb.from('site_settings').upsert({ key: 'profile', value });
+        if (error) throw error;
+        $('pf_photo_url').value = photo;
+        $('pf_photo_file').value='';
+        $('pf_status').textContent = 'บันทึกแล้ว ✓ (รีเฟรชหน้า Resume เพื่อดูผล)'; toast('บันทึกข้อมูลส่วนตัวแล้ว');
+        setTimeout(()=>{ $('pf_status').textContent=''; }, 4000);
+      } catch (err) { $('pf_status').textContent = 'ผิดพลาด: ' + err.message; toast('บันทึกไม่สำเร็จ', 'err'); }
+    };
+
+    // ---------- CONTENT / เนื้อหา resume ----------
+    const escA = s => String(s == null ? '' : s).replace(/[&<>"]/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[m]));
+    const TITLE_KEYS = [['profile','Profile (แนะนำตัว)'],['contact','Contact (ติดต่อ)'],['expertise','Core Expertise'],['experience','Work Experience'],['projects','Projects & Systems'],['education','Education'],['additional','Additional'],['softskills','Soft Skills'],['tools','Tools & Platforms']];
+    const DEFAULT_CONTENT = {
+      titles: { profile:{title:'Profile',show:true}, contact:{title:'Contact',show:true}, expertise:{title:'Core Expertise',show:true}, experience:{title:'Work Experience',show:true}, projects:{title:'Projects & Systems',show:true}, education:{title:'Education',show:true}, additional:{title:'Additional',show:true}, softskills:{title:'Soft Skills',show:true}, tools:{title:'Tools & Platforms',show:true} },
+      expertise: [
+        { icon:'aperture', title:'การผลิตสื่อดิจิทัลและมัลติมีเดีย', percent:85, items:['ถ่ายภาพ • ถ่ายวิดีโอ','ตัดต่อวิดีโอ • ออกแบบกราฟิก','สื่อประชาสัมพันธ์'] },
+        { icon:'radio-tower', title:'ระบบถ่ายทอดสดและอุปกรณ์สื่อ', percent:90, items:['Live Streaming','ระบบเสียงและห้องประชุม','กล้องและอุปกรณ์บันทึกภาพ','บันทึกเสียงและไมโครโฟน'] },
+        { icon:'graduation-cap', title:'เทคโนโลยีการศึกษาและระบบการเรียนรู้', percent:90, items:['Moodle & ระบบออนไลน์','จัดอบรม/พัฒนาทักษะดิจิทัล','ให้คำปรึกษาการใช้งานระบบ'] },
+        { icon:'bar-chart-3', title:'การวิเคราะห์ข้อมูลและรายงานผล', percent:80, items:['วิเคราะห์ข้อมูลนักศึกษา','Power BI • Data Studio','สร้าง Dashboard & รายงาน'] },
+        { icon:'code-2', title:'การพัฒนาระบบเพื่อการทำงาน', percent:75, items:['พัฒนาระบบภายในหน่วยงาน','ระบบบริหารจัดการงาน','Web Application & Database'] },
+      ],
+      experience: [
+        { period:'2564 – ปัจจุบัน', badge:'ลูกจ้างชั่วคราว', role:'เจ้าพนักงานห้องสมุด', org:'งานเทคโนโลยีสารสนเทศเพื่อการศึกษา • สำนักวิทยบริการและเทคโนโลยีสารสนเทศ ม.ราชภัฏยะลา', points:['จัดทำสื่อประชาสัมพันธ์และสื่อการเรียนรู้ออนไลน์','ถ่ายภาพ บันทึก ตัดต่อวิดีโอการสอน/กิจกรรม และควบคุมการถ่ายทอดสด','วิเคราะห์ข้อมูลระบบและกิจกรรมการสอบของนักศึกษา','พัฒนาระบบการเรียนรู้ออนไลน์และระบบจัดการงานภายในหน่วยงาน','จัดอบรมพัฒนาสมรรถนะดิจิทัล และให้คำปรึกษาการใช้ระบบแก่อาจารย์'] },
+        { period:'2564', badge:'พนักงานจ้างเหมาบริการ', role:'ผู้ปฏิบัติงานห้องสมุด', org:'ศูนย์บรรณสารสนเทศ (ห้องสมุด) • สำนักวิทยบริการและเทคโนโลยีสารสนเทศ ม.ราชภัฏยะลา', points:['จัดทำสื่อประชาสัมพันธ์และทำข่าวประชาสัมพันธ์','ถ่ายภาพกิจกรรม และวิเคราะห์ข้อมูลสื่อสิ่งพิมพ์','ดูแลเว็บไซต์ห้องสมุด'] },
+      ],
+      education: [ { degree:'ครุศาสตรบัณฑิต (ค.บ.)', major:'สาขาวิชาคอมพิวเตอร์', place:'มหาวิทยาลัยราชภัฏยะลา', year:'สำเร็จการศึกษา พ.ศ. 2562' } ],
+      additional: ['ดูแลและซ่อมบำรุงคอมพิวเตอร์ ทั้งซอฟต์แวร์และฮาร์ดแวร์','ออกแบบกราฟิกและตกแต่งภาพระดับมืออาชีพ','ประยุกต์ใช้เครื่องมือ AI ในการทำงาน','บริหารฐานข้อมูลด้วย phpMyAdmin, Navicat, FileZilla'],
+      softskills: [ {icon:'users',label:'การสื่อสารและประสานงาน'},{icon:'users-round',label:'ทำงานเป็นทีม'},{icon:'lightbulb',label:'แก้ไขปัญหาอย่างสร้างสรรค์'},{icon:'clock',label:'บริหารเวลาและจัดลำดับงาน'} ],
+      tools: [ {name:'Microsoft Office',img:'images/ms%20office.png',fb:'O'},{name:'Google Workspace',img:'images/Google.png',fb:'G'},{name:'Moodle',img:'https://cdn.simpleicons.org/moodle',fb:'M'},{name:'Power BI',img:'images/power-bi.png',fb:'BI'},{name:'Data Studio',img:'https://cdn.simpleicons.org/looker',fb:'DS'},{name:'Canva',img:'images/canva-icon.webp',fb:'Cv'},{name:'Photoshop',img:'images/photoshop.png',fb:'Ps'},{name:'Premiere Pro',img:'images/Premiere_Pro.png',fb:'Pr'},{name:'Camtasia',img:'images/Camtasia-icon1024.webp',fb:'Ca'},{name:'AI Tools',img:'images/ai.svg',fb:'AI'} ],
+      motto: 'ใช้เทคโนโลยีเพื่อสร้างโอกาสในการเรียนรู้ และพัฒนาการทำงานให้มีประสิทธิภาพยิ่งขึ้น',
+    };
+
+    let ctTitles = {}, ctExp = [], ctWork = [], ctEdu = [], ctTools = [];
+
+    function renderTitles() {
+      $('ct_titles').innerHTML = TITLE_KEYS.map(([k,label]) => {
+        const t = ctTitles[k] || {};
+        return `<div class="flex items-center gap-2" data-tk="${k}">
+          <span class="w-44 text-xs text-slate-500 shrink-0">${label}</span>
+          <input class="tk-title flex-1 rounded border border-slate-300 px-2 py-1.5 text-sm" value="${escA(t.title)}" />
+          <label class="flex items-center gap-1 text-xs text-slate-500 shrink-0"><input type="checkbox" class="tk-show" ${t.show!==false?'checked':''}/> แสดง</label>
+        </div>`;
+      }).join('');
+    }
+    function collectTitles() {
+      ctTitles = {};
+      document.querySelectorAll('#ct_titles [data-tk]').forEach(r => {
+        ctTitles[r.dataset.tk] = { title: r.querySelector('.tk-title').value.trim(), show: r.querySelector('.tk-show').checked };
+      });
+    }
+
+    function renderExpertise() {
+      $('ct_expertise').innerHTML = ctExp.map(e => `
+        <div class="exp-row rounded-lg border border-slate-200 p-3 space-y-2">
+          <div class="flex gap-2">
+            <input class="e-icon w-28 rounded border border-slate-300 px-2 py-1.5 text-sm" placeholder="ไอคอน" value="${escA(e.icon)}" />
+            <input class="e-title flex-1 rounded border border-slate-300 px-2 py-1.5 text-sm" placeholder="หัวข้อ" value="${escA(e.title)}" />
+            <input class="e-pct w-16 rounded border border-slate-300 px-2 py-1.5 text-sm" type="number" value="${Number(e.percent)||0}" />
+            <button type="button" class="e-rm text-red-400 hover:text-red-600 px-1">✕</button>
+          </div>
+          <textarea class="e-items w-full rounded border border-slate-300 px-2 py-1.5 text-sm" rows="3" placeholder="รายการย่อย บรรทัดละ 1">${escA((e.items||[]).join('\n'))}</textarea>
+        </div>`).join('');
+      $('ct_expertise').querySelectorAll('.e-rm').forEach((b,i) => b.onclick = () => { collectExpertise(); ctExp.splice(i,1); renderExpertise(); });
+    }
+    function collectExpertise() {
+      ctExp = [...document.querySelectorAll('#ct_expertise .exp-row')].map(r => ({
+        icon: r.querySelector('.e-icon').value.trim() || 'star',
+        title: r.querySelector('.e-title').value.trim(),
+        percent: parseInt(r.querySelector('.e-pct').value) || 0,
+        items: r.querySelector('.e-items').value.split('\n').map(s => s.trim()).filter(Boolean),
+      }));
+    }
+
+    function renderWork() {
+      $('ct_experience').innerHTML = ctWork.map(e => `
+        <div class="work-row rounded-lg border border-slate-200 p-3 space-y-2">
+          <div class="flex gap-2">
+            <input class="w-period w-32 rounded border border-slate-300 px-2 py-1.5 text-sm" placeholder="ช่วงปี" value="${escA(e.period)}" />
+            <input class="w-badge flex-1 rounded border border-slate-300 px-2 py-1.5 text-sm" placeholder="ตำแหน่ง/ป้าย" value="${escA(e.badge)}" />
+            <button type="button" class="w-rm text-red-400 hover:text-red-600 px-1">✕</button>
+          </div>
+          <input class="w-role w-full rounded border border-slate-300 px-2 py-1.5 text-sm" placeholder="ชื่อตำแหน่งงาน" value="${escA(e.role)}" />
+          <input class="w-org w-full rounded border border-slate-300 px-2 py-1.5 text-sm" placeholder="หน่วยงาน" value="${escA(e.org)}" />
+          <textarea class="w-points w-full rounded border border-slate-300 px-2 py-1.5 text-sm" rows="3" placeholder="หน้าที่ บรรทัดละ 1">${escA((e.points||[]).join('\n'))}</textarea>
+        </div>`).join('');
+      $('ct_experience').querySelectorAll('.w-rm').forEach((b,i) => b.onclick = () => { collectWork(); ctWork.splice(i,1); renderWork(); });
+    }
+    function collectWork() {
+      ctWork = [...document.querySelectorAll('#ct_experience .work-row')].map(r => ({
+        period: r.querySelector('.w-period').value.trim(),
+        badge: r.querySelector('.w-badge').value.trim(),
+        role: r.querySelector('.w-role').value.trim(),
+        org: r.querySelector('.w-org').value.trim(),
+        points: r.querySelector('.w-points').value.split('\n').map(s => s.trim()).filter(Boolean),
+      }));
+    }
+
+    function renderEdu() {
+      $('ct_education').innerHTML = ctEdu.map(e => `
+        <div class="edu-row rounded-lg border border-slate-200 p-3 grid grid-cols-2 gap-2">
+          <input class="d-degree rounded border border-slate-300 px-2 py-1.5 text-sm" placeholder="วุฒิ" value="${escA(e.degree)}" />
+          <input class="d-major rounded border border-slate-300 px-2 py-1.5 text-sm" placeholder="สาขา" value="${escA(e.major)}" />
+          <input class="d-place rounded border border-slate-300 px-2 py-1.5 text-sm" placeholder="สถาบัน" value="${escA(e.place)}" />
+          <div class="flex gap-2">
+            <input class="d-year flex-1 rounded border border-slate-300 px-2 py-1.5 text-sm" placeholder="ปี" value="${escA(e.year)}" />
+            <button type="button" class="d-rm text-red-400 hover:text-red-600 px-1">✕</button>
+          </div>
+        </div>`).join('');
+      $('ct_education').querySelectorAll('.d-rm').forEach((b,i) => b.onclick = () => { collectEdu(); ctEdu.splice(i,1); renderEdu(); });
+    }
+    function collectEdu() {
+      ctEdu = [...document.querySelectorAll('#ct_education .edu-row')].map(r => ({
+        degree: r.querySelector('.d-degree').value.trim(),
+        major: r.querySelector('.d-major').value.trim(),
+        place: r.querySelector('.d-place').value.trim(),
+        year: r.querySelector('.d-year').value.trim(),
+      }));
+    }
+
+    function renderTools() {
+      $('ct_tools').innerHTML = ctTools.map(t => `
+        <div class="tool-row rounded-lg border border-slate-200 p-2 space-y-2">
+          <div class="flex items-center gap-2">
+            <span class="tl-prev w-9 h-9 shrink-0 grid place-items-center rounded bg-slate-100 overflow-hidden text-[10px] font-bold text-slate-500">
+              ${t.img ? `<img src="${escA(t.img)}" class="w-9 h-9 object-contain"/>` : escA(t.fb||'?')}
+            </span>
+            <input class="tl-name flex-1 rounded border border-slate-300 px-2 py-1.5 text-sm" placeholder="ชื่อเครื่องมือ" value="${escA(t.name)}" />
+            <input class="tl-fb w-14 rounded border border-slate-300 px-2 py-1.5 text-sm" placeholder="ย่อ" value="${escA(t.fb)}" title="ตัวอักษรย่อ (ใช้เมื่อไม่มีรูป)" />
+            <button type="button" class="tl-rm text-red-400 hover:text-red-600 px-1">✕</button>
+          </div>
+          <div class="flex items-center gap-2">
+            <input class="tl-img flex-1 rounded border border-slate-300 px-2 py-1.5 text-xs" placeholder="วาง URL รูปไอคอน (หรือกดอัปโหลด)" value="${escA(t.img)}" />
+            <label class="tl-up shrink-0 text-xs text-white bg-navy-700 hover:bg-navy-800 rounded px-3 py-1.5 cursor-pointer">อัปโหลด<input type="file" accept="image/*" class="hidden tl-file"/></label>
+          </div>
+        </div>`).join('');
+      const rows = $('ct_tools').querySelectorAll('.tool-row');
+      rows.forEach((r,i) => {
+        r.querySelector('.tl-rm').onclick = () => { collectTools(); ctTools.splice(i,1); renderTools(); };
+        // วาง/พิมพ์ URL → อัปเดตพรีวิวสด
+        r.querySelector('.tl-img').oninput = (e) => {
+          const prev = r.querySelector('.tl-prev'); const v = e.target.value.trim();
+          prev.innerHTML = v ? `<img src="${v}" class="w-9 h-9 object-contain"/>` : (r.querySelector('.tl-fb').value.trim() || '?');
+        };
+        // อัปโหลดไฟล์ → เก็บเข้า Storage แล้วเติม URL
+        r.querySelector('.tl-file').onchange = async (e) => {
+          const f = e.target.files[0]; if (!f) return;
+          collectTools();
+          try {
+            ctTools[i].img = await uploadTo('project-images', f);
+            renderTools(); toast('อัปโหลดไอคอนแล้ว');
+          } catch (err) { toast('อัปโหลดไม่สำเร็จ', 'err'); }
+        };
+      });
+    }
+    function collectTools() {
+      ctTools = [...document.querySelectorAll('#ct_tools .tool-row')].map(r => ({
+        name: r.querySelector('.tl-name').value.trim(),
+        fb: r.querySelector('.tl-fb').value.trim(),
+        img: r.querySelector('.tl-img').value.trim(),
+      })).filter(t => t.name);
+    }
+
+    document.querySelectorAll('#panel-content [data-add]').forEach(b => b.onclick = () => {
+      const k = b.dataset.add;
+      if (k === 'expertise') { collectExpertise(); ctExp.push({ icon:'star', title:'', percent:80, items:[] }); renderExpertise(); }
+      if (k === 'experience') { collectWork(); ctWork.push({ period:'', badge:'', role:'', org:'', points:[] }); renderWork(); }
+      if (k === 'education') { collectEdu(); ctEdu.push({ degree:'', major:'', place:'', year:'' }); renderEdu(); }
+      if (k === 'tools') { collectTools(); ctTools.push({ name:'', fb:'', img:'' }); renderTools(); }
+    });
+
+    async function contentLoad() {
+      const { data } = await sb.from('site_settings').select('value').eq('key','content').maybeSingle();
+      const c = (data && data.value) ? (typeof data.value==='string'?JSON.parse(data.value):data.value) : DEFAULT_CONTENT;
+      ctTitles = Object.assign({}, DEFAULT_CONTENT.titles, c.titles || {});
+      ctExp = (c.expertise && c.expertise.length) ? c.expertise : DEFAULT_CONTENT.expertise;
+      ctWork = (c.experience && c.experience.length) ? c.experience : DEFAULT_CONTENT.experience;
+      ctEdu = (c.education && c.education.length) ? c.education : DEFAULT_CONTENT.education;
+      $('ct_additional').value = (c.additional && c.additional.length ? c.additional : DEFAULT_CONTENT.additional).join('\n');
+      $('ct_softskills').value = (c.softskills && c.softskills.length ? c.softskills : DEFAULT_CONTENT.softskills).map(s => `${s.icon} | ${s.label}`).join('\n');
+      ctTools = (c.tools && c.tools.length) ? c.tools : DEFAULT_CONTENT.tools;
+      $('ct_motto').value = (c.motto != null ? c.motto : DEFAULT_CONTENT.motto);
+      renderTitles(); renderExpertise(); renderWork(); renderEdu(); renderTools();
+    }
+
+    $('ct_save').onclick = async () => {
+      collectTitles(); collectExpertise(); collectWork(); collectEdu(); collectTools();
+      $('ct_save').disabled = true; $('ct_status').textContent = 'กำลังบันทึก…';
+      const value = {
+        titles: ctTitles, expertise: ctExp, experience: ctWork, education: ctEdu,
+        additional: $('ct_additional').value.split('\n').map(s => s.trim()).filter(Boolean),
+        softskills: $('ct_softskills').value.split('\n').map(l => l.split('|')).map(p => ({ icon:(p[0]||'star').trim(), label:(p[1]||'').trim() })).filter(s => s.label),
+        tools: ctTools,
+        motto: $('ct_motto').value.trim(),
+      };
+      const { error } = await sb.from('site_settings').upsert({ key:'content', value });
+      $('ct_save').disabled = false;
+      $('ct_status').textContent = error ? ('ผิดพลาด: '+error.message) : 'บันทึกแล้ว ✓ (รีเฟรชหน้า Resume)';
+      toast(error ? 'บันทึกไม่สำเร็จ' : 'บันทึกเนื้อหาแล้ว', error ? 'err' : 'ok');
+      if (!error) setTimeout(() => { $('ct_status').textContent=''; }, 4000);
+    };
+
+    // ---------- THEME / สี ----------
+    function themeRender() {
+      const primary = $('th_primary').value, accent = $('th_accent').value;
+      $('th_primary_hex').value = primary; $('th_accent_hex').value = accent;
+      const navy = DCLTheme.navyScale(primary), gold = DCLTheme.goldScale(accent);
+      const c = t => 'rgb(' + t + ')';
+      $('themePreview').innerHTML = `
+        <div style="border-radius:14px;overflow:hidden;border:1px solid #e2e8f0;box-shadow:0 6px 20px rgba(0,0,0,.08)">
+          <div style="background:${c(navy[900])};padding:18px 20px;color:#fff">
+            <div style="font-family:'Great Vibes',cursive;color:${c(gold[400])};font-size:1.6rem;line-height:1">Somyot Deewijit</div>
+            <div style="font-weight:800;font-size:1.15rem;margin-top:2px">นายสมยศ ดีวิจิตร</div>
+            <span style="display:inline-block;margin-top:10px;background:${c(gold[500])};color:#3a2a00;font-size:.7rem;font-weight:700;padding:3px 10px;border-radius:6px">ความเชี่ยวชาญ</span>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;padding:14px;background:#fff;align-items:center">
+            <span style="background:${c(navy[50])};color:${c(navy[700])};font-size:.75rem;padding:4px 10px;border-radius:999px">หมวดงาน</span>
+            <button style="background:${c(navy[700])};color:#fff;font-size:.78rem;padding:6px 14px;border:none;border-radius:8px">ปุ่มหลัก</button>
+            <span style="color:${c(gold[600])};font-size:.78rem;font-weight:600">ลิงก์ทอง →</span>
+          </div>
+        </div>`;
+    }
+    function themeSet(primary, accent) { $('th_primary').value = primary; $('th_accent').value = accent; themeRender(); }
+    ['th_primary','th_accent'].forEach(id => $(id).oninput = themeRender);
+    ['th_primary_hex','th_accent_hex'].forEach(id => $(id).onchange = () => {
+      const v = $(id).value.trim(); if (/^#[0-9a-f]{6}$/i.test(v)) { $(id.replace('_hex','')).value = v; themeRender(); }
+    });
+
+    function renderPresets() {
+      $('th_presets').innerHTML = DCLTheme.PRESETS.map((p,i) => `
+        <button data-preset="${i}" class="flex items-center gap-2 rounded-lg border border-slate-200 hover:border-navy-400 px-3 py-1.5 text-xs transition">
+          <span style="width:14px;height:14px;border-radius:50%;background:${p.primary};display:inline-block"></span>
+          <span style="width:14px;height:14px;border-radius:50%;background:${p.accent};display:inline-block"></span>
+          ${p.name}
+        </button>`).join('');
+      $('th_presets').querySelectorAll('[data-preset]').forEach(b => b.onclick = () => {
+        const p = DCLTheme.PRESETS[+b.dataset.preset]; themeSet(p.primary, p.accent);
+      });
+    }
+
+    let themeLoaded = false;
+    async function themeLoad() {
+      renderPresets();
+      const { data } = await sb.from('site_settings').select('value').eq('key','theme').maybeSingle();
+      const th = (data && data.value) ? (typeof data.value==='string'?JSON.parse(data.value):data.value) : DCLTheme.DEFAULT_THEME;
+      themeSet(th.primary || DCLTheme.DEFAULT_THEME.primary, th.accent || DCLTheme.DEFAULT_THEME.accent);
+      $('th_cover_url').value = th.cover_url || ''; $('th_cover_file').value = '';
+      themeCoverPreview();
+      themeLoaded = true;
+      lucide.createIcons();
+    }
+    function themeCoverPreview() {
+      const f = $('th_cover_file').files[0];
+      const src = f ? URL.createObjectURL(f) : $('th_cover_url').value.trim();
+      $('th_cover_prev').innerHTML = src ? `<img src="${src}" class="h-20 rounded-lg border border-slate-200"/>` : '';
+    }
+    $('th_cover_url').oninput = themeCoverPreview;
+    $('th_cover_file').onchange = themeCoverPreview;
+    $('th_cover_clear').onclick = () => { $('th_cover_url').value=''; $('th_cover_file').value=''; themeCoverPreview(); };
+
+    $('th_reset').onclick = () => themeSet(DCLTheme.DEFAULT_THEME.primary, DCLTheme.DEFAULT_THEME.accent);
+    $('th_save').onclick = async () => {
+      $('th_save').disabled = true; $('th_status').textContent = 'กำลังบันทึก…';
+      try {
+        let cover = $('th_cover_url').value.trim();
+        if ($('th_cover_file').files[0]) cover = await uploadFixed('project-images', $('th_cover_file').files[0], 'profile/cover');
+        const value = { primary: $('th_primary').value, accent: $('th_accent').value, cover_url: cover };
+        const { error } = await sb.from('site_settings').upsert({ key:'theme', value });
+        if (error) throw error;
+        $('th_cover_url').value = cover; $('th_cover_file').value = ''; themeCoverPreview();
+        $('th_status').textContent = 'บันทึกแล้ว ✓ (รีเฟรชหน้า Resume เพื่อดูผล)'; toast('บันทึกธีมแล้ว');
+        setTimeout(()=>{ $('th_status').textContent=''; }, 4000);
+      } catch (err) { $('th_status').textContent = 'ผิดพลาด: ' + err.message; toast('บันทึกไม่สำเร็จ', 'err'); }
+      finally { $('th_save').disabled = false; }
+    };
+
+    // ---------- SHOWCASE: list ----------
+    const SC_LABEL = { certificate:'ใบประกาศ', award:'รางวัล', training:'อบรม/วิทยากร', gallery:'แกลเลอรี่' };
+    const SC_ICON  = { certificate:'award', award:'trophy', training:'presentation', gallery:'images' };
+
+    async function scLoadList() {
+      const { data, error } = await sb.from('showcase').select('*')
+        .order('sort_order',{ascending:true}).order('created_at',{ascending:false});
+      if (error) { $('scList').innerHTML = `<p class="text-red-500">${error.message}</p>`; return; }
+      $('scCount').textContent = data.length;
+      $('scList').innerHTML = data.map(it => `
+        <div class="flex items-center gap-3 bg-white rounded-xl border border-slate-200 p-3">
+          <span class="grid place-items-center w-12 h-12 rounded-lg bg-navy-50 text-navy-700 shrink-0 overflow-hidden">
+            ${it.image_url?`<img src="${it.image_url}" class="w-12 h-12 object-cover"/>`:`<i data-lucide="${SC_ICON[it.type]||'award'}"></i>`}
+          </span>
+          <div class="flex-1 min-w-0">
+            <p class="font-semibold text-sm text-slate-800 truncate">${it.title||'(ไม่มีชื่อ)'} </p>
+            <p class="text-xs text-slate-400 truncate">
+              <span class="text-navy-600 font-medium">${SC_LABEL[it.type]||it.type}</span>
+              ${it.issuer?' · '+it.issuer:''}${it.date_text?' · '+it.date_text:''}
+            </p>
+          </div>
+          <button data-scstar='${it.id}' data-on='${it.featured?1:0}' title="แสดงในหน้า Resume (สูงสุด 8)" class="p-2 ${it.featured?'text-gold-500':'text-slate-300'} hover:text-gold-500"><i data-lucide="star"></i></button>
+          <button data-scedit='${it.id}' class="text-navy-500 hover:text-navy-700 p-2"><i data-lucide="pencil"></i></button>
+          <button data-scdel='${it.id}' data-img='${it.image_url||''}' class="text-slate-400 hover:text-red-500 p-2"><i data-lucide="trash-2"></i></button>
+        </div>`).join('') || '<p class="text-slate-400 text-center py-8">ยังไม่มีรายการ — กด “เพิ่มรายการ”</p>';
+      document.querySelectorAll('[data-scstar]').forEach(b => b.onclick = () => starToggle('showcase', b.dataset.scstar, b.dataset.on !== '1'));
+      document.querySelectorAll('[data-scedit]').forEach(b => b.onclick = () => scOpen(data.find(x=>x.id===b.dataset.scedit)));
+      document.querySelectorAll('[data-scdel]').forEach(b => b.onclick = () => scDel(b.dataset.scdel, b.dataset.img));
+      lucide.createIcons();
+    }
+
+    // ---------- SHOWCASE: modal ----------
+    let scOldImg = null, scKeptImg = null, scFilePrev = null;   // จัดการรูป showcase
+
+    function scRenderImg() {
+      let src = null;
+      if (scFilePrev) src = scFilePrev;                         // ไฟล์ที่เพิ่งเลือก
+      else if ($('sc_imgurl').value.trim()) src = $('sc_imgurl').value.trim();  // url ที่พิมพ์
+      else if (scKeptImg) src = scKeptImg;                      // รูปเดิม
+      $('scImgPreview').innerHTML = src
+        ? `<div class="relative inline-block">
+             <img src="${src}" class="h-24 rounded-lg border border-slate-200"/>
+             <button type="button" id="scRmImg" class="absolute -top-2 -right-2 w-6 h-6 grid place-items-center rounded-full bg-black/70 text-white hover:bg-red-500">×</button>
+           </div>`
+        : '';
+      const rm = $('scRmImg');
+      if (rm) rm.onclick = () => {
+        if (scFilePrev) { URL.revokeObjectURL(scFilePrev); scFilePrev = null; }
+        $('sc_image').value = ''; $('sc_imgurl').value = ''; scKeptImg = null;
+        scRenderImg();
+      };
+    }
+
+    function scOpen(it) {
+      $('scFormErr').classList.add('hidden');
+      $('sc_image').value = ''; $('sc_imgurl').value = '';
+      if (scFilePrev) { URL.revokeObjectURL(scFilePrev); scFilePrev = null; }
+      $('scModalTitle').textContent = it ? 'แก้ไขรายการ' : 'เพิ่มรายการ';
+      $('sc_id').value     = it?.id || '';
+      $('sc_type').value   = it?.type || 'certificate';
+      $('sc_title').value  = it?.title || '';
+      $('sc_issuer').value = it?.issuer || '';
+      $('sc_desc').value   = it?.description || '';
+      $('sc_date').value   = it?.date_text || '';
+      $('sc_tag').value    = it?.tag || '';
+      $('sc_url').value    = it?.url || '';
+      $('sc_sort').value   = it?.sort_order ?? 100;
+      scOldImg = scKeptImg = it?.image_url || null;
+      scRenderImg();
+      show($('scModal'),true); $('scModal').classList.add('flex');
+      lucide.createIcons();
+    }
+    function scClose(){ show($('scModal'),false); $('scModal').classList.remove('flex'); }
+    $('scAddBtn').onclick = () => scOpen(null);
+    $('scCloseModal').onclick = $('scCancelBtn').onclick = scClose;
+    $('sc_imgurl').oninput = scRenderImg;                       // พิมพ์ URL → เห็นทันที
+    $('sc_image').onchange = () => {                            // เลือกไฟล์ → เห็นทันที
+      const f = $('sc_image').files[0];
+      if (scFilePrev) URL.revokeObjectURL(scFilePrev);
+      scFilePrev = f ? URL.createObjectURL(f) : null;
+      scRenderImg();
+    };
+
+    const scUpload = (file) => uploadTo('showcase-images', file);
+
+    $('scForm').onsubmit = async (e) => {
+      e.preventDefault();
+      show($('scFormErr'),false);
+      $('scSaveBtn').disabled = true; $('scSaveBtn').textContent = 'กำลังบันทึก…';
+      try {
+        const row = {
+          type: $('sc_type').value,
+          title: $('sc_title').value.trim() || null,
+          issuer: $('sc_issuer').value.trim() || null,
+          description: $('sc_desc').value.trim() || null,
+          date_text: $('sc_date').value.trim() || null,
+          tag: $('sc_tag').value.trim() || null,
+          url: $('sc_url').value.trim() || null,
+          sort_order: parseInt($('sc_sort').value || '100', 10),
+        };
+        // ลำดับความสำคัญ: ไฟล์ใหม่ > URL ที่พิมพ์ > รูปเดิมที่เก็บไว้ (scKeptImg อาจถูกลบเป็น null)
+        const file = $('sc_image').files[0];
+        const urlIn = $('sc_imgurl').value.trim();
+        if (file) row.image_url = await scUpload(file);
+        else if (urlIn) {
+          if (!/^https?:\/\//i.test(urlIn)) throw new Error('URL ต้องขึ้นต้นด้วย http:// หรือ https://');
+          row.image_url = urlIn;
+        } else row.image_url = scKeptImg;                        // คงรูปเดิม หรือ null ถ้ากดลบ
+
+        const id = $('sc_id').value;
+        const res = id
+          ? await sb.from('showcase').update(row).eq('id', id)
+          : await sb.from('showcase').insert(row);
+        if (res.error) throw res.error;
+
+        // ลบไฟล์รูปเก่าใน storage ถ้าถูกเปลี่ยน/เอาออก
+        if (scOldImg && scOldImg !== row.image_url) {
+          const path = scOldImg.split('/showcase-images/')[1];
+          if (path) sb.storage.from('showcase-images').remove([path]);
+        }
+        scClose(); scLoadList(); toast('บันทึกรายการแล้ว');
+      } catch (err) {
+        $('scFormErr').textContent = 'บันทึกไม่สำเร็จ: ' + err.message; show($('scFormErr'),true); toast('บันทึกไม่สำเร็จ', 'err');
+      } finally {
+        $('scSaveBtn').disabled = false; $('scSaveBtn').textContent = 'บันทึก';
+      }
+    };
+
+    async function scDel(id, imgUrl) {
+      if (!confirm('ลบรายการนี้?')) return;
+      const { error } = await sb.from('showcase').delete().eq('id', id);
+      if (error) { alert('ลบไม่สำเร็จ: '+error.message); return; }
+      if (imgUrl) { const path = imgUrl.split('/showcase-images/')[1]; if (path) sb.storage.from('showcase-images').remove([path]); }
+      scLoadList(); toast('ลบรายการแล้ว');
+    }
+
+    refreshAuth();
+    lucide.createIcons();
+  </script>
+</body>
+</html>
